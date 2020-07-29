@@ -46,12 +46,12 @@
    "links": "[\n    {\n        \"label\": \"Bank\",\n        \"name\": \"Bank\",\n        \"type\": \"doctype\"\n    },\n    {\n        \"label\": \"Bank Account\",\n        \"name\": \"Bank Account\",\n        \"type\": \"doctype\"\n    },\n    {\n        \"label\": \"Bank Statement Transaction Entry\",\n        \"name\": \"Bank Statement Transaction Entry\",\n        \"type\": \"doctype\"\n    },\n    {\n        \"label\": \"Bank Statement Settings\",\n        \"name\": \"Bank Statement Settings\",\n        \"type\": \"doctype\"\n    }\n]"
   },
   {
-   "hidden": 0,
+   "hidden": 1,
    "label": "Subscription Management",
    "links": "[\n    {\n        \"label\": \"Subscription Plan\",\n        \"name\": \"Subscription Plan\",\n        \"type\": \"doctype\"\n    },\n    {\n        \"label\": \"Subscription\",\n        \"name\": \"Subscription\",\n        \"type\": \"doctype\"\n    },\n    {\n        \"label\": \"Subscription Settings\",\n        \"name\": \"Subscription Settings\",\n        \"type\": \"doctype\"\n    }\n]"
   },
   {
-   "hidden": 0,
+   "hidden": 1,
    "label": "Goods and Services Tax (GST India)",
    "links": "[\n    {\n        \"label\": \"GST Settings\",\n        \"name\": \"GST Settings\",\n        \"type\": \"doctype\"\n    },\n    {\n        \"label\": \"GST HSN Code\",\n        \"name\": \"GST HSN Code\",\n        \"type\": \"doctype\"\n    },\n    {\n        \"is_query_report\": true,\n        \"label\": \"GSTR-1\",\n        \"name\": \"GSTR-1\",\n        \"type\": \"report\"\n    },\n    {\n        \"is_query_report\": true,\n        \"label\": \"GSTR-2\",\n        \"name\": \"GSTR-2\",\n        \"type\": \"report\"\n    },\n    {\n        \"label\": \"GSTR 3B Report\",\n        \"name\": \"GSTR 3B Report\",\n        \"type\": \"doctype\"\n    },\n    {\n        \"is_query_report\": true,\n        \"label\": \"GST Sales Register\",\n        \"name\": \"GST Sales Register\",\n        \"type\": \"report\"\n    },\n    {\n        \"is_query_report\": true,\n        \"label\": \"GST Purchase Register\",\n        \"name\": \"GST Purchase Register\",\n        \"type\": \"report\"\n    },\n    {\n        \"is_query_report\": true,\n        \"label\": \"GST Itemised Sales Register\",\n        \"name\": \"GST Itemised Sales Register\",\n        \"type\": \"report\"\n    },\n    {\n        \"is_query_report\": true,\n        \"label\": \"GST Itemised Purchase Register\",\n        \"name\": \"GST Itemised Purchase Register\",\n        \"type\": \"report\"\n    },\n    {\n        \"country\": \"India\",\n        \"description\": \"C-Form records\",\n        \"label\": \"C-Form\",\n        \"name\": \"C-Form\",\n        \"type\": \"doctype\"\n    }\n]"
   },
@@ -97,11 +97,11 @@
  "hide_custom": 0,
  "idx": 0,
  "is_standard": 1,
- "label": "Accounting",
+ "label": "Accounts",
  "modified": "2020-06-19 12:42:44.054598",
  "modified_by": "Administrator",
  "module": "Accounts",
- "name": "Accounting",
+ "name": "Accounts",
  "onboarding": "Accounts",
  "owner": "Administrator",
  "pin_to_bottom": 0,

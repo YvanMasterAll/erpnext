@@ -89,6 +89,16 @@ def get_data():
 			"type": "module",
 			"description": "Loan Management for Customer and Employees"
 		},
+		# Change: 添加模块配置，目的是在用户配置的允许模块中体现
+		{
+			"module_name": "Payroll",
+			"category": "Modules",
+			"label": _("Payroll"),
+			"color": "#EF4DB6",
+			"icon": "octicon octicon-repo",
+			"type": "module",
+			"description": "payroll"
+		},
 		{
 			"module_name": "Support",
 			"category": "Modules",

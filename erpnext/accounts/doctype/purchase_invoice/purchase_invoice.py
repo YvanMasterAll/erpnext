@@ -238,11 +238,11 @@ class PurchaseInvoice(BuyingController):
 					not frappe.db.get_value("Purchase Order Item", item.po_detail, "delivered_by_supplier")):
 
 				if self.update_stock and (not item.from_warehouse):
-					if for_validate and item.expense_account and item.expense_account != warehouse_account[item.warehouse]["account"]:
-						frappe.msgprint(_('''Row {0}: Expense Head changed to {1} because account {2}
-							is not linked to warehouse {3} or it is not the default inventory account'''.format(
-								item.idx, frappe.bold(warehouse_account[item.warehouse]["account"]),
-								frappe.bold(item.expense_account), frappe.bold(item.warehouse))))
+					# Change: 勾选更新库存点击保存，会出现如下提示，关闭该提示
+					# if for_validate and item.expense_account and item.expense_account != warehouse_account[item.warehouse]["account"]:
+					# 	frappe.msgprint(_('''Row {0}: Expense Head changed to {1} because account {2} is not linked to warehouse {3} or it is not the default inventory account'''.format(
+					# 			item.idx, frappe.bold(warehouse_account[item.warehouse]["account"]),
+					# 			frappe.bold(item.expense_account), frappe.bold(item.warehouse))))
 
 					item.expense_account = warehouse_account[item.warehouse]["account"]
 				else:

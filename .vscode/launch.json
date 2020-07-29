@@ -1,0 +1,22 @@
+{
+	// Use IntelliSense to learn about possible attributes.
+	// Hover to view descriptions of existing attributes.
+	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Bench",
+			"type": "python",
+			"request": "launch",
+			"program": "/Users/yiqiang/Work/Workplace/Java/mes/erpnext/frappe-bench/apps/frappe/frappe/utils/bench_helper.py",
+			"args": [
+				"frappe", "serve", "--port", "8000", "--noreload", "--nothreading"
+			],
+			"pythonPath": "/Users/yiqiang/Work/Workplace/Java/mes/erpnext/frappe-bench/apps/../env/bin/python",
+			"cwd": "/Users/yiqiang/Work/Workplace/Java/mes/erpnext/frappe-bench/apps/../sites",
+			"env": {
+				"DEV_SERVER": "1"
+			}
+		}
+	]
+}

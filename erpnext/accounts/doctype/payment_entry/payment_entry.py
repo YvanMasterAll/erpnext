@@ -282,10 +282,15 @@ class PaymentEntry(AccountsController):
 					no_oustanding_refs.setdefault(d.reference_doctype, []).append(d)
 
 		for k, v in no_oustanding_refs.items():
-			frappe.msgprint(_("{} - {} now have {} as they had no outstanding amount left before submitting the Payment Entry.<br><br>\
-					If this is undesirable please cancel the corresponding Payment Entry.")
-				.format(k, frappe.bold(", ".join([d.reference_name for d in v])), frappe.bold("negative outstanding amount")),
+			# Change: 直接更换中文提示
+			frappe.msgprint(_("{} - {} 现在的 {} 因为在提交付款分录之前没有未结款项.<br><br>\
+					如果不希望这样做，请取消相应的付款条目.")
+				.format(k, frappe.bold(", ".join([d.reference_name for d in v])), frappe.bold("未结金额为负")),
 				title=_("Warning"), indicator="orange")
+			# frappe.msgprint(_("{} - {} now have {} as they had no outstanding amount left before submitting the Payment Entry.<br><br>\
+			# 		If this is undesirable please cancel the corresponding Payment Entry.")
+			# 	.format(k, frappe.bold(", ".join([d.reference_name for d in v])), frappe.bold("negative outstanding amount")),
+			# 	title=_("Warning"), indicator="orange")
 
 
 	def validate_journal_entry(self):

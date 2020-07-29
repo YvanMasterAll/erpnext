@@ -2,7 +2,7 @@ frappe.provide('erpnext.stock');
 
 erpnext.stock.ItemDashboard = Class.extend({
 	init: function(opts) {
-		$.extend(this, opts);
+        $.extend(this, opts);
 		this.make();
 	},
 	make: function() {
@@ -69,7 +69,7 @@ erpnext.stock.ItemDashboard = Class.extend({
 			this.before_refresh();
 		}
 
-		var me = this;
+        var me = this;
 		frappe.call({
 			method: 'erpnext.stock.dashboard.item_dashboard.get_data',
 			args: {

@@ -6,7 +6,7 @@
    "links": "[\n    {\n        \"label\": \"Patient\",\n        \"name\": \"Patient\",\n        \"onboard\": 1,\n        \"type\": \"doctype\"\n    },\n    {\n        \"label\": \"Diagnosis\",\n        \"name\": \"Diagnosis\",\n        \"onboard\": 1,\n        \"type\": \"doctype\"\n    }\n]"
   },
   {
-   "hidden": 0,
+   "hidden": 1,
    "label": "Agriculture",
    "links": "[\n    {\n        \"label\": \"Crop\",\n        \"name\": \"Crop\",\n        \"onboard\": 1,\n        \"type\": \"doctype\"\n    },\n    {\n        \"label\": \"Crop Cycle\",\n        \"name\": \"Crop Cycle\",\n        \"onboard\": 1,\n        \"type\": \"doctype\"\n    },\n    {\n        \"label\": \"Location\",\n        \"name\": \"Location\",\n        \"onboard\": 1,\n        \"type\": \"doctype\"\n    },\n    {\n        \"label\": \"Fertilizer\",\n        \"name\": \"Fertilizer\",\n        \"onboard\": 1,\n        \"type\": \"doctype\"\n    }\n]"
   },
