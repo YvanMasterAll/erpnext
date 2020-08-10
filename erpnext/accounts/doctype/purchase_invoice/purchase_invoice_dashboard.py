@@ -10,7 +10,8 @@ def get_data():
 			'Payment Request': 'reference_name',
 			'Landed Cost Voucher': 'receipt_document',
 			'Purchase Invoice': 'return_against',
-			'Auto Repeat': 'reference_document'
+			'Auto Repeat': 'reference_document',
+			'Purchase Invoice Record': 'purchase_invoice_reference'
 		},
 		'internal_links': {
 			'Purchase Order': ['items', 'purchase_order'],
@@ -19,7 +20,7 @@ def get_data():
 		'transactions': [
 			{
 				'label': _('Payment'),
-				'items': ['Payment Entry', 'Payment Request', 'Journal Entry']
+				'items': ['Payment Entry', 'Payment Request', 'Journal Entry', 'Purchase Invoice Record']
 			},
 			{
 				'label': _('Reference'),

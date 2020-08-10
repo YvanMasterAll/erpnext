@@ -67,6 +67,11 @@ erpnext.accounts.PurchaseInvoice = erpnext.buying.BuyingController.extend({
 		}
 
 		if(!doc.is_return && doc.docstatus==1) {
+			// Change: 添加创建实际发票按钮
+			if(flt(doc.per_billed, 6) < 100) {
+				cur_frm.add_custom_button(__('Invoice Record'), this.make_purchase_invoice_record, __('Create'));
+			}
+
 			if(doc.outstanding_amount >= 0 || Math.abs(flt(doc.outstanding_amount)) < flt(doc.grand_total)) {
 				cur_frm.add_custom_button(__('Return / Debit Note'),
 					this.make_debit_note, __('Create'));
@@ -305,6 +310,14 @@ erpnext.accounts.PurchaseInvoice = erpnext.buying.BuyingController.extend({
 			method: "erpnext.accounts.doctype.purchase_invoice.purchase_invoice.make_inter_company_sales_invoice",
 			frm: frm
 		});
+	},
+
+	// Change: 创建实际发票
+	make_purchase_invoice_record: function() {
+		frappe.model.open_mapped_doc({
+			method: "erpnext.accounts.doctype.purchase_invoice.purchase_invoice.make_purchase_invoice_record",
+			frm: me.frm
+		})
 	},
 
 	is_paid: function() {

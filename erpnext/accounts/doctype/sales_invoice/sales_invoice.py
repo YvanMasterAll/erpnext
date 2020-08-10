@@ -260,6 +260,10 @@ class SalesInvoice(SellingController):
 			self.update_stock_ledger()
 
 		self.make_gl_entries_on_cancel()
+
+		# Change: Cancel Sales Invoice Record
+		# self.update_sales_invoice_record()
+		
 		frappe.db.set(self, 'status', 'Cancelled')
 
 		if frappe.db.get_single_value('Selling Settings', 'sales_update_frequency') == "Each Transaction":
@@ -381,6 +385,11 @@ class SalesInvoice(SellingController):
 	def on_update(self):
 		self.set_paid_amount()
 
+	# Change: 更新实际发票函数
+	def update_sales_invoice_record(self):
+		frappe.db.sql("""update `tab%s` where sales_invoice_reference = %s
+			set status = %s""", ('Sales Invoice Record', self.name, 'Cancelled'))
+			
 	def set_paid_amount(self):
 		paid_amount = 0.0
 		base_paid_amount = 0.0
@@ -539,7 +548,7 @@ class SalesInvoice(SellingController):
 		self.against_income_account = ','.join(against_acc)
 
 	def add_remarks(self):
-		if not self.remarks: self.remarks = 'No Remarks'
+		if not self.remarks: self.remarks = _('No Remarks')
 
 	def validate_auto_set_posting_time(self):
 		# Don't auto set the posting date and time if invoice is amended
@@ -1595,3 +1604,61 @@ def create_invoice_discounting(source_name, target_doc=None):
 	})
 
 	return invoice_discounting
+
+# Change: 创建实际发票业务逻辑
+@frappe.whitelist()
+def make_sales_invoice_record(source_name, target_doc=None, ignore_permissions=False):
+	def postprocess(source, target):
+		set_missing_values(source, target)
+
+	def set_missing_values(source, target):
+		target.run_method("calculate_taxes_and_totals")
+
+	def update_item(source, target, source_parent):
+		target.amount = flt(source.amount) - flt(source.billed_amt)
+		target.qty = target.amount / flt(source.rate)
+
+	def update_taxes(source, target, source_parent):
+		target.tax_amount = flt(source.tax_amount) - flt(source.billed_amt)
+		return
+		# 初始化税款为0
+		# target.rate = 0
+		# target.tax_amount = 0
+		# target.total = 0
+
+	doclist = get_mapped_doc("Sales Invoice", source_name, {
+		"Sales Invoice": {
+			"doctype": "Sales Invoice Record",
+			"field_map": {
+				"party_account_currency": "party_account_currency",
+				"payment_terms_template": "payment_terms_template",
+				"due_date": "due_date"
+			},
+			"validation": {
+				"docstatus": ["=", 1]
+			}
+		},
+		"Sales Invoice Item": {
+			"doctype": "Sales Invoice Record Item",
+			"field_map": {
+				"name": "si_detail",
+				"parent": "sales_invoice",
+			},
+			"postprocess": update_item,
+			"condition": lambda doc: doc.qty and (doc.base_amount==0 or abs(doc.billed_amt) < abs(doc.amount))
+		},
+		"Sales Taxes and Charges": {
+			"doctype": "Sales Taxes and Charges",
+			"field_map": {
+				"name": "st_detail",
+			},
+			"postprocess": update_taxes,
+			"add_if_empty": True
+		},
+		"Sales Team": {
+			"doctype": "Sales Team",
+			"add_if_empty": True
+		}
+	}, target_doc, postprocess, ignore_permissions=ignore_permissions)
+
+	return doclist

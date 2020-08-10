@@ -1149,3 +1149,60 @@ def make_inter_company_sales_invoice(source_name, target_doc=None):
 
 def on_doctype_update():
 	frappe.db.add_index("Purchase Invoice", ["supplier", "is_return", "return_against"])
+
+# Change: 创建实际发票业务逻辑
+@frappe.whitelist()
+def make_purchase_invoice_record(source_name, target_doc=None, ignore_permissions=False):
+	def postprocess(source, target):
+		set_missing_values(source, target)
+	
+	def set_missing_values(source, target):
+		target.run_method("calculate_taxes_and_totals")
+
+	def update_item(source, target, source_parent):
+		target.amount = flt(source.amount) - flt(source.billed_amt)
+		target.qty = target.amount / flt(source.rate)
+	
+	def update_taxes(source, target, source_parent):
+		target.tax_amount = flt(source.tax_amount) - flt(source.billed_amt)
+		return
+
+	fields = {
+		"Purchase Invoice": {
+			"doctype": "Purchase Invoice Record",
+			"field_map": {
+				"party_account_currency": "party_account_currency",
+				"supplier_warehouse":"supplier_warehouse"
+			},
+			"validation": {
+				"docstatus": ["=", 1],
+			}
+		},
+		"Purchase Invoice Item": {
+			"doctype": "Purchase Invoice Record Item",
+			"field_map": {
+				"name": "pi_detail",
+				"parent": "purchase_invoice",
+			},
+			"postprocess": update_item,
+			"condition": lambda doc: (doc.base_amount==0 or abs(doc.billed_amt) < abs(doc.amount))
+		},
+		"Purchase Taxes and Charges": {
+			"doctype": "Purchase Taxes and Charges",
+			"field_map": {
+				"name": "pt_detail",
+			},
+			"postprocess": update_taxes,
+			"add_if_empty": True
+		}
+	}
+
+	if frappe.get_single("Accounts Settings").automatically_fetch_payment_terms == 1:
+		fields["Payment Schedule"] = {
+			"doctype": "Payment Schedule",
+			"add_if_empty": True
+		}
+
+	doc = get_mapped_doc("Purchase Invoice", source_name, fields, target_doc, postprocess, ignore_permissions=ignore_permissions)
+
+	return doc

@@ -118,6 +118,11 @@
    "type": "DocType"
   },
   {
+	"label": "Sales Invoice Record",
+	"link_to": "Sales Invoice Record",
+	"type": "DocType"
+  },
+  {
    "label": "Purchase Invoice",
    "link_to": "Purchase Invoice",
    "type": "DocType"

@@ -196,6 +196,10 @@ frappe.query_reports["Accounts Receivable"] = {
 			var filters = report.get_values();
 			frappe.set_route('query-report', 'Accounts Receivable Summary', {company: filters.company});
 		});
+		report.page.add_inner_button(__("Sales Invoice Details"), function() {
+			var filters = report.get_values();
+			frappe.set_route('query-report', 'Sales Invoice Details', {company: filters.company});
+		});
 	}
 }
 

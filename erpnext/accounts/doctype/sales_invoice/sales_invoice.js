@@ -61,6 +61,11 @@ erpnext.accounts.SalesInvoiceController = erpnext.selling.SellingController.exte
 		}
 
 		if(doc.docstatus==1 && !doc.is_return) {
+			
+			// Change: 添加创建实际发票按钮
+			if(flt(doc.per_billed, 6) < 100) {
+				cur_frm.add_custom_button(__('Invoice Record'), this.make_sales_invoice_record, __('Create'));
+			}
 
 			var is_delivered_by_supplier = false;
 
@@ -289,6 +294,14 @@ erpnext.accounts.SalesInvoiceController = erpnext.selling.SellingController.exte
 			method: "erpnext.accounts.doctype.sales_invoice.sales_invoice.make_inter_company_purchase_invoice",
 			frm: me.frm
 		});
+	},
+
+	// Change: 创建实际发票
+	make_sales_invoice_record: function() {
+		frappe.model.open_mapped_doc({
+			method: "erpnext.accounts.doctype.sales_invoice.sales_invoice.make_sales_invoice_record",
+			frm: me.frm
+		})
 	},
 
 	debit_to: function() {

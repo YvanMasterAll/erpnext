@@ -179,7 +179,7 @@ class AccountsController(TransactionBase):
 		from erpnext.controllers.taxes_and_totals import calculate_taxes_and_totals
 		calculate_taxes_and_totals(self)
 
-		if self.doctype in ["Quotation", "Sales Order", "Delivery Note", "Sales Invoice"]:
+		if self.doctype in ["Quotation", "Sales Order", "Delivery Note", "Sales Invoice", "Sales Invoice Record"]:
 			self.calculate_commission()
 			self.calculate_contribution()
 
@@ -721,10 +721,10 @@ class AccountsController(TransactionBase):
 
 	def get_party(self):
 		party_type = None
-		if self.doctype in ("Opportunity", "Quotation", "Sales Order", "Delivery Note", "Sales Invoice"):
+		if self.doctype in ("Opportunity", "Quotation", "Sales Order", "Delivery Note", "Sales Invoice", "Sales Invoice Record"):
 			party_type = 'Customer'
 
-		elif self.doctype in ("Supplier Quotation", "Purchase Order", "Purchase Receipt", "Purchase Invoice"):
+		elif self.doctype in ("Supplier Quotation", "Purchase Order", "Purchase Receipt", "Purchase Invoice", "Purchase Invoice Record"):
 			party_type = 'Supplier'
 
 		elif self.meta.get_field("customer"):

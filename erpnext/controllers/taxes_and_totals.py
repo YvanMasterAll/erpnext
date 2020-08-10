@@ -26,7 +26,7 @@ class calculate_taxes_and_totals(object):
 			self.set_discount_amount()
 			self.apply_discount_amount()
 
-		if self.doc.doctype in ["Sales Invoice", "Purchase Invoice"]:
+		if self.doc.doctype in ["Sales Invoice", "Purchase Invoice", "Sales Invoice Record", "Purchase Invoice Record"]:
 			self.calculate_total_advance()
 
 		if self.doc.meta.get_field("other_charges_calculation"):
@@ -289,7 +289,7 @@ class calculate_taxes_and_totals(object):
 		# if tax/charges is for deduction, multiply by -1
 		if getattr(tax, "category", None):
 			tax_amount = 0.0 if (tax.category == "Valuation") else tax_amount
-			if self.doc.doctype in ["Purchase Order", "Purchase Invoice", "Purchase Receipt", "Supplier Quotation"]:
+			if self.doc.doctype in ["Purchase Order", "Purchase Invoice", "Purchase Receipt", "Supplier Quotation", "Purchase Invoice Record"]:
 				tax_amount *= -1.0 if (tax.add_deduct_tax == "Deduct") else 1.0
 		return tax_amount
 
@@ -369,7 +369,7 @@ class calculate_taxes_and_totals(object):
 
 		self._set_in_company_currency(self.doc, ["total_taxes_and_charges", "rounding_adjustment"])
 
-		if self.doc.doctype in ["Quotation", "Sales Order", "Delivery Note", "Sales Invoice"]:
+		if self.doc.doctype in ["Quotation", "Sales Order", "Delivery Note", "Sales Invoice", "Sales Invoice Record"]:
 			self.doc.base_grand_total = flt(self.doc.grand_total * self.doc.conversion_rate, self.doc.precision("base_grand_total")) \
 				if self.doc.total_taxes_and_charges else self.doc.base_net_total
 		else:
@@ -519,7 +519,7 @@ class calculate_taxes_and_totals(object):
 		self.doc.round_floats_in(self.doc, ["grand_total", "total_advance", "write_off_amount"])
 		self._set_in_company_currency(self.doc, ['write_off_amount'])
 
-		if self.doc.doctype in ["Sales Invoice", "Purchase Invoice"]:
+		if self.doc.doctype in ["Sales Invoice", "Purchase Invoice", "Purchase Invoice Record", "Sales Invoice Record"]:
 			grand_total = self.doc.rounded_total or self.doc.grand_total
 			if self.doc.party_account_currency == self.doc.currency:
 				total_amount_to_pay = flt(grand_total - self.doc.total_advance

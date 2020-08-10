@@ -156,11 +156,20 @@ class StatusUpdater(Document):
 					args['name'] = d.get(args['join_field'])
 
 					# get all qty where qty > target_field
-					item = frappe.db.sql("""select item_code, `{target_ref_field}`,
-						`{target_field}`, parenttype, parent from `tab{target_dt}`
-						where `{target_ref_field}` < `{target_field}`
-						and name=%s and docstatus=1""".format(**args),
-						args['name'], as_dict=1)
+					item = None
+					if args['source_dt'] == "Sales Taxes and Charges" or args['source_dt'] == "Purchase Taxes and Charges":
+						item = frappe.db.sql("""select `{target_ref_field}`,
+							`{target_field}`, parenttype, parent from `tab{target_dt}`
+							where `{target_ref_field}` < `{target_field}`
+							and name=%s and docstatus=1""".format(**args),
+							args['name'], as_dict=1)
+					else:	
+						item = frappe.db.sql("""select item_code, `{target_ref_field}`,
+							`{target_field}`, parenttype, parent from `tab{target_dt}`
+							where `{target_ref_field}` < `{target_field}`
+							and name=%s and docstatus=1""".format(**args),
+							args['name'], as_dict=1)
+					
 					if item:
 						item = item[0]
 						item['idx'] = d.idx
@@ -181,6 +190,12 @@ class StatusUpdater(Document):
 			Checks if there is overflow condering a relaxation allowance
 		"""
 		qty_or_amount = "qty" if "qty" in args['target_ref_field'] else "amount"
+
+		if args['source_dt'] == "Sales Taxes and Charges" or args['source_dt'] == "Purchase Taxes and Charges":
+			overflow_percent = ((item[args['target_field']] - item[args['target_ref_field']]) / item[args['target_ref_field']]) * 100
+			if overflow_percent > 0:
+				frappe.throw('税款超过了发票限制，请检查税款信息')
+			return
 
 		# check if overflow is within allowance
 		allowance, self.item_allowance, self.global_qty_allowance, self.global_amount_allowance = \

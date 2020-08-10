@@ -88,7 +88,12 @@ class TransactionBase(StatusUpdater):
 			is_child = val.get("is_child_table")
 			ref_doc = {}
 			item_ref_dn = []
-			for d in self.get_all_children(self.doctype + " Item"):
+			children = []
+			if key == 'Sales Taxes And Charges':
+				children = self.get_all_children(key)
+			else:
+				children = self.get_all_children(self.doctype + " Item")
+			for d in children:
 				ref_dn = d.get(val["ref_dn_field"])
 				if ref_dn:
 					if is_child:

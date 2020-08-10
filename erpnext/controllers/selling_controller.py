@@ -273,6 +273,13 @@ class SellingController(StockController):
 				if status in ("Closed", "On Hold"):
 					frappe.throw(_("Sales Order {0} is {1}").format(d.get(ref_fieldname), status))
 
+	def check_sales_invoice_on_hold_or_close(self, ref_fieldname):
+		for d in self.get("items"):
+			if d.get(ref_fieldname):
+				status = frappe.db.get_value("Sales Invoice", d.get(ref_fieldname), "status")
+				if status in ("Closed", "On Hold"):
+					frappe.throw(_("Sales Invoice {0} is {1}").format(d.get(ref_fieldname), status))
+
 	def update_reserved_qty(self):
 		so_map = {}
 		for d in self.get("items"):
@@ -383,7 +390,7 @@ class SellingController(StockController):
 			return
 
 		for d in self.get('items'):
-			if self.doctype == "Sales Invoice":
+			if self.doctype == "Sales Invoice" or self.doctype == "Sales Invoice Record":
 				e = [d.item_code, d.description, d.warehouse, d.sales_order or d.delivery_note, d.batch_no or '']
 				f = [d.item_code, d.description, d.sales_order or d.delivery_note]
 			elif self.doctype == "Delivery Note":
