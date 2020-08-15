@@ -565,12 +565,37 @@ frappe.ui.form.on('Payment Entry', {
 			frm.events.set_unallocated_amount(frm);
 	},
 
+	get_start_time_of_trade: function(dialog, frm) {
+		var args = {
+			"company": frm.doc.company,
+			"party": frm.doc.party,
+			"party_type": frm.doc.party_type,
+			"party_account": frm.doc.payment_type=="Receive" ? frm.doc.paid_from : frm.doc.paid_to,
+			"cost_center": frm.doc.cost_center,
+			"payment_type": frm.doc.payment_type,
+		}
+		frappe.call({
+			method: 'erpnext.accounts.doctype.payment_entry.payment_entry.get_start_time_of_trade',
+			args: {
+				args: args
+			},
+			callback: function(r, rt) {
+				if(r.message) {
+					var field = dialog.fields_list.filter(d => d.df.fieldname === "from_posting_date")[0]
+					field.set_input(r.message[0].posting_date)
+				}
+			}
+		});
+	},
+
 	get_outstanding_invoice: function(frm) {
 		const today = frappe.datetime.get_today();
+
 		const fields = [
 			{fieldtype:"Section Break", label: __("Posting Date")},
 			{fieldtype:"Date", label: __("From Date"),
 				fieldname:"from_posting_date", default:frappe.datetime.add_days(today, -30)},
+			{fieldtype:"Button", label: "获取最早交易时间", 'click': function() { frm.events.get_start_time_of_trade(dialog, frm) },},
 			{fieldtype:"Column Break"},
 			{fieldtype:"Date", label: __("To Date"), fieldname:"to_posting_date", default:today},
 			{fieldtype:"Section Break", label: __("Due Date")},
@@ -583,10 +608,10 @@ frappe.ui.form.on('Payment Entry', {
 			{fieldtype:"Column Break"},
 			{fieldtype:"Float", label: __("Less Than Amount"), fieldname:"outstanding_amt_less_than"},
 			{fieldtype:"Section Break"},
-			{fieldtype:"Check", label: __("Allocate Payment Amount"), fieldname:"allocate_payment_amount", default:1},
+			{fieldtype:"Check", label: __("Allocate Payment Amount"), fieldname:"allocate_payment_amount", default:1}
 		];
 
-		frappe.prompt(fields, function(filters){
+		var dialog = frappe.prompt(fields, function(filters){
 			frappe.flags.allocate_payment_amount = true;
 			frm.events.validate_filters_data(frm, filters);
 			frm.events.get_outstanding_documents(frm, filters);
@@ -653,6 +678,7 @@ frappe.ui.form.on('Payment Entry', {
 					var total_negative_outstanding = 0;
 
 					$.each(r.message, function(i, d) {
+						if (frm.doc.paid_amount < total_positive_outstanding) { return false }
 						var c = frm.add_child("references");
 						c.reference_doctype = d.voucher_type;
 						c.reference_name = d.voucher_no;

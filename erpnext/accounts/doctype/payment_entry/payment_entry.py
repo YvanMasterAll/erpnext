@@ -629,6 +629,40 @@ class PaymentEntry(AccountsController):
 		self.set_unallocated_amount()
 
 @frappe.whitelist()
+def get_start_time_of_trade(args):
+	if isinstance(args, string_types):
+		args = json.loads(args)
+
+	party = args.get('party')
+	party_type = args.get('party_type')
+	party_account = args.get('party_account')
+	company = args.get('company')
+		
+	if party_type == "Customer":
+		voucher_type = "Sales Invoice"
+	if party_type == 'Supplier':
+		voucher_type = "Purchase Invoice"
+
+	start_date = frappe.db.sql("""
+		select
+			posting_date
+		from
+			`tab{voucher_type}`
+		where
+			{party_type} = %s and {party_account} = %s and docstatus = 1 and 
+			company = %s and outstanding_amount > 0
+		order by
+			posting_date, name
+		limit 1
+	""".format(**{
+		"voucher_type": voucher_type,
+		"party_type": scrub(party_type),
+		"party_account": "debit_to" if party_type == "Customer" else "credit_to",
+	}), (party, party_account, company), as_dict=True)
+	
+	return start_date
+
+@frappe.whitelist()
 def get_outstanding_reference_documents(args):
 
 	if isinstance(args, string_types):
