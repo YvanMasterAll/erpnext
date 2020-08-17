@@ -145,3 +145,4 @@ def is_member():
 	if last_membership and getdate(last_membership.to_date) > getdate():
 		return True
 	return False
+
