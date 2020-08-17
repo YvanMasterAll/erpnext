@@ -49,14 +49,17 @@ class SalesInvoiceRecord(SellingController):
 			'status_field': 'billing_status',
 			'keyword': 'Billed',
 			'overflow_type': 'billing'
-		}, {
-			'source_dt': 'Sales Taxes and Charges',
-			'target_field': 'billed_amt',
-			'target_ref_field': 'tax_amount',
-			'target_dt': 'Sales Taxes and Charges',
-			'join_field': 'st_detail',
-			'source_field': 'tax_amount',
-		}]
+		}, 
+		# Change: 这里添加子表验证，本地测试没有问题，但是线上却报错：pymysql.err.InternalError: (1093, "Table 'tabSales Taxes and Charges' is specified twice, both as a target for 'UPDATE' and as a separate source for data")
+		# {
+		# 	'source_dt': 'Sales Taxes and Charges',
+		# 	'target_field': 'billed_amt',
+		# 	'target_ref_field': 'tax_amount',
+		# 	'target_dt': 'Sales Taxes and Charges',
+		# 	'join_field': 'st_detail',
+		# 	'source_field': 'tax_amount',
+		# }
+		]
 
 	def set_indicator(self):
 		"""Set indicator for portal"""
