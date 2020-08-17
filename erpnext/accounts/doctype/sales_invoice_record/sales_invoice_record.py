@@ -191,12 +191,12 @@ class SalesInvoiceRecord(SellingController):
 				"is_child_table": True,
 				"allow_duplicate_prev_row_id": True
 			},
-			"Sales Taxes And Charges": {
-				"ref_dn_field": "st_detail",
-				"compare_fields": [["account_head", "="], ["charge_type", "="]],
-				"is_child_table": True,
-				"allow_duplicate_prev_row_id": True
-			},
+			# Change: 这里添加子表验证，本地测试没有问题，但是线上却报错：Invalid reference {0} {1},无效的参考{0} {1}
+			# "Sales Taxes And Charges": {
+			# 	"ref_dn_field": "st_detail",
+			# 	"compare_fields": [["account_head", "="], ["charge_type", "="]],
+			# 	"is_child_table": True
+			# },
 		})
 
 		if cint(frappe.db.get_single_value('Selling Settings', 'maintain_same_sales_rate')) and not self.is_return:
