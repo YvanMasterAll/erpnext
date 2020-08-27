@@ -73,7 +73,8 @@ class AccountsController(TransactionBase):
 
 		self.validate_date_with_fiscal_year()
 
-		if self.meta.get_field("currency"):
+		# Change: 销售实际发票简化代码
+		if self.meta.get_field("currency") and self.doctype not in ["Sales Invoice Record", "Purchase Invoice Record"]:
 			self.calculate_taxes_and_totals()
 
 			if not self.meta.get_field("is_return") or not self.is_return:

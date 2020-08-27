@@ -47,7 +47,11 @@ frappe.query_reports["Sales Invoice Details"] = {
 					frappe.query_report.set_filter_value('payment_terms', "");
 				}
 			}
-		},
+		},{
+			"fieldname": "hide_completed_invoice",
+			"label": __("Hide Completed Invoice"),
+			"fieldtype": "Check"
+		}
 	],
 
 	"formatter": function(value, row, column, data, default_formatter) {

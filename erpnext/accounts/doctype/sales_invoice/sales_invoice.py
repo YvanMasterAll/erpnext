@@ -1609,22 +1609,12 @@ def create_invoice_discounting(source_name, target_doc=None):
 @frappe.whitelist()
 def make_sales_invoice_record(source_name, target_doc=None, ignore_permissions=False):
 	def postprocess(source, target):
-		set_missing_values(source, target)
-
-	def set_missing_values(source, target):
-		target.run_method("calculate_taxes_and_totals")
+		target.billed_amt = flt(source.total) - flt(source.per_billed)
+		return
 
 	def update_item(source, target, source_parent):
 		target.amount = flt(source.amount) - flt(source.billed_amt)
 		target.qty = target.amount / flt(source.rate)
-
-	def update_taxes(source, target, source_parent):
-		target.tax_amount = flt(source.tax_amount) - flt(source.billed_amt)
-		return
-		# 初始化税款为0
-		# target.rate = 0
-		# target.tax_amount = 0
-		# target.total = 0
 
 	doclist = get_mapped_doc("Sales Invoice", source_name, {
 		"Sales Invoice": {
@@ -1642,22 +1632,10 @@ def make_sales_invoice_record(source_name, target_doc=None, ignore_permissions=F
 			"doctype": "Sales Invoice Record Item",
 			"field_map": {
 				"name": "si_detail",
-				"parent": "sales_invoice",
+				"parent": "sales_invoice_reference",
 			},
 			"postprocess": update_item,
 			"condition": lambda doc: doc.qty and (doc.base_amount==0 or abs(doc.billed_amt) < abs(doc.amount))
-		},
-		"Sales Taxes and Charges": {
-			"doctype": "Sales Taxes and Charges",
-			"field_map": {
-				"name": "st_detail",
-			},
-			"postprocess": update_taxes,
-			"add_if_empty": True
-		},
-		"Sales Team": {
-			"doctype": "Sales Team",
-			"add_if_empty": True
 		}
 	}, target_doc, postprocess, ignore_permissions=ignore_permissions)
 

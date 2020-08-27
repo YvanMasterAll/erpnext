@@ -12,13 +12,6 @@ erpnext.accounts.PurchaseInvoiceRecord = erpnext.buying.BuyingController.extend(
 	
 	onload: function() {
 		this._super();
-
-		if(!this.frm.doc.__islocal) {
-			// show credit_to in print format
-			if(!this.frm.doc.supplier && this.frm.doc.credit_to) {
-				this.frm.set_df_property("credit_to", "print_hide", 0);
-			}
-		}
 	},
 
 	refresh: function(doc) {
@@ -26,58 +19,6 @@ erpnext.accounts.PurchaseInvoiceRecord = erpnext.buying.BuyingController.extend(
 		this._super();
 
 		hide_fields(this.frm.doc);
-
-		this.frm.toggle_reqd("supplier_warehouse", this.frm.doc.is_subcontracted==="Yes");
-	},
-
-	credit_to: function() {
-		var me = this;
-		if(this.frm.doc.credit_to) {
-			me.frm.call({
-				method: "frappe.client.get_value",
-				args: {
-					doctype: "Account",
-					fieldname: "account_currency",
-					filters: { name: me.frm.doc.credit_to },
-				},
-				callback: function(r, rt) {
-					if(r.message) {
-						me.frm.set_value("party_account_currency", r.message.account_currency);
-						me.set_dynamic_labels();
-					}
-				}
-			});
-		}
-	},
-
-	is_paid: function() {
-		hide_fields(this.frm.doc);
-		if(cint(this.frm.doc.is_paid)) {
-			this.frm.set_value("allocate_advances_automatically", 0);
-			if(!this.frm.doc.company) {
-				this.frm.set_value("is_paid", 0)
-				frappe.msgprint(__("Please specify Company to proceed"));
-			}
-		}
-		this.calculate_outstanding_amount();
-		this.frm.refresh_fields();
-	},
-
-	write_off_amount: function() {
-		this.set_in_company_currency(this.frm.doc, ["write_off_amount"]);
-		this.calculate_outstanding_amount();
-		this.frm.refresh_fields();
-	},
-
-	paid_amount: function() {
-		this.set_in_company_currency(this.frm.doc, ["paid_amount"]);
-		this.write_off_amount();
-		this.frm.refresh_fields();
-	},
-
-	allocated_amount: function() {
-		this.calculate_total_advance();
-		this.frm.refresh_fields();
 	},
 
 	items_add: function(doc, cdt, cdn) {
@@ -87,9 +28,7 @@ erpnext.accounts.PurchaseInvoiceRecord = erpnext.buying.BuyingController.extend(
 	},
 
 	on_submit: function() {
-		$.each(this.frm.doc["items"] || [], function(i, row) {
-			if(row.purchase_receipt) frappe.model.clear_doc("Purchase Receipt", row.purchase_receipt)
-		})
+		return
 	},
 
 });
@@ -99,80 +38,7 @@ cur_frm.script_manager.make(erpnext.accounts.PurchaseInvoiceRecord);
 // Hide Fields
 // ------------
 function hide_fields(doc) {
-	var parent_fields = ['due_date', 'is_opening', 'advances_section', 'from_date', 'to_date'];
-
-	if(cint(doc.is_paid) == 1) {
-		hide_field(parent_fields);
-	} else {
-		for (var i in parent_fields) {
-			var docfield = frappe.meta.docfield_map[doc.doctype][parent_fields[i]];
-			if(!docfield.hidden) unhide_field(parent_fields[i]);
-		}
-
-	}
-
-	var item_fields_stock = ['warehouse_section', 'received_qty', 'rejected_qty'];
-
-	cur_frm.fields_dict['items'].grid.set_column_disp(item_fields_stock,
-		(cint(doc.update_stock)==1 || cint(doc.is_return)==1 ? true : false));
-
-	cur_frm.refresh_fields();
-}
-
-cur_frm.fields_dict.cash_bank_account.get_query = function(doc) {
-	return {
-		filters: [
-			["Account", "account_type", "in", ["Cash", "Bank"]],
-			["Account", "is_group", "=",0],
-			["Account", "company", "=", doc.company],
-			["Account", "report_type", "=", "Balance Sheet"]
-		]
-	}
-}
-
-cur_frm.fields_dict['items'].grid.get_field("item_code").get_query = function(doc, cdt, cdn) {
-	return {
-		query: "erpnext.controllers.queries.item_query",
-		filters: {'is_purchase_item': 1}
-	}
-}
-
-cur_frm.fields_dict['credit_to'].get_query = function(doc) {
-	// filter on Account
-	return {
-		filters: {
-			'account_type': 'Payable',
-			'is_group': 0,
-			'company': doc.company
-		}
-	}
-}
-
-// Get Print Heading
-cur_frm.fields_dict['select_print_heading'].get_query = function(doc, cdt, cdn) {
-	return {
-		filters:[
-			['Print Heading', 'docstatus', '!=', 2]
-		]
-	}
-}
-
-cur_frm.set_query("expense_account", "items", function(doc) {
-	return {
-		query: "erpnext.controllers.queries.get_expense_account",
-		filters: {'company': doc.company }
-	}
-});
-
-cur_frm.cscript.expense_account = function(doc, cdt, cdn){
-	var d = locals[cdt][cdn];
-	if(d.idx == 1 && d.expense_account){
-		var cl = doc.items || [];
-		for(var i = 0; i < cl.length; i++){
-			if(!cl[i].expense_account) cl[i].expense_account = d.expense_account;
-		}
-	}
-	refresh_field('items');
+	return
 }
 
 cur_frm.fields_dict["items"].grid.get_field("cost_center").get_query = function(doc) {
@@ -204,15 +70,6 @@ cur_frm.fields_dict['items'].grid.get_field('project').get_query = function(doc,
 	}
 }
 
-cur_frm.cscript.select_print_heading = function(doc,cdt,cdn){
-	if(doc.select_print_heading){
-		// print heading
-		cur_frm.pformat.print_heading = doc.select_print_heading;
-	}
-	else
-		cur_frm.pformat.print_heading = __("Purchase Invoice");
-}
-
 frappe.ui.form.on("Purchase Invoice Record", {
 	setup: function(frm) {
 		frm.fields_dict['items'].grid.get_field('deferred_expense_account').get_query = function(doc) {
@@ -233,32 +90,59 @@ frappe.ui.form.on("Purchase Invoice Record", {
 				}
 			};
 		});
+
+		frm.set_query("purchase_invoice_reference", "items", function(doc, cdt, cdn) {
+			return { filters: { "supplier": doc.supplier } };
+		});
+		
+		frm.set_query("item_code", "items", function(doc, cdt, cdn) {
+			let row = locals[cdt][cdn]
+			return { 
+				query: "erpnext.accounts.doctype.purchase_invoice_item.purchase_invoice_item.get_items", 
+				filters: { 
+					"purchase_invoice_reference": row.purchase_invoice_reference
+				}};
+			}
+		);
 	},
 
 	onload: function(frm) {
-		if(frm.doc.__onload) {
-			if(frm.doc.supplier) {
-				frm.doc.apply_tds = frm.doc.__onload.supplier_tds ? 1 : 0;
-			}
-			if(!frm.doc.__onload.supplier_tds) {
-				frm.set_df_property("apply_tds", "read_only", 1);
-			}
-		}
+		return
+	},
 
-		erpnext.queries.setup_queries(frm, "Warehouse", function() {
-			return erpnext.queries.warehouse(frm.doc);
+	get_not_billed_item: function(frm) {
+		frm.clear_table("items");
+		var args = {
+			"company": frm.doc.company,
+			"party": frm.doc.supplier,
+			"party_type": "Supplier"
+		}
+		frappe.call({
+			method: 'erpnext.accounts.doctype.payment_entry.payment_entry.get_not_billed_item',
+			args: {
+				args: args
+			},
+			callback: function(r, rt) {
+				if(r.message) {
+					var billed_amt = frm.doc.billed_amt
+					$.each(r.message, function(i, d) {
+						if (billed_amt <= 0) { return false }
+						var not_billed_amt = flt(d.amount - d.billed_amt)
+						if (billed_amt < not_billed_amt) {
+							not_billed_amt = billed_amt
+						}
+						billed_amt -= not_billed_amt
+						var c = frm.add_child("items")
+						Object.keys(d).forEach(key => {
+							c[key] = d[key]
+						})
+						c.qty = not_billed_amt / flt(c.rate)
+					})
+					frm.cscript.calculate_taxes_and_totals()
+					frm.refresh_fields()
+				}
+			}
 		});
-	},
-
-	is_subcontracted: function(frm) {
-		if (frm.doc.is_subcontracted === "Yes") {
-			erpnext.buying.get_default_bom(frm);
-		}
-		frm.toggle_reqd("supplier_warehouse", frm.doc.is_subcontracted==="Yes");
-	},
-
-	update_stock: function(frm) {
-		hide_fields(frm.doc);
-		frm.fields_dict.items.grid.toggle_reqd("item_code", frm.doc.update_stock? true: false);
+		refresh_field('items');
 	}
 })

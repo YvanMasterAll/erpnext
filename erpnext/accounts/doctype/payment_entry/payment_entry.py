@@ -68,6 +68,7 @@ class PaymentEntry(AccountsController):
 		self.setup_party_account_field()
 		if self.difference_amount:
 			frappe.throw(_("Difference Amount must be zero"))
+		# Change: 在这里更新销售发票的未付款金额
 		self.make_gl_entries()
 		self.update_outstanding_amounts()
 		self.update_advance_paid()
@@ -661,6 +662,59 @@ def get_start_time_of_trade(args):
 	}), (party, party_account, company), as_dict=True)
 	
 	return start_date
+
+# Change: 获取未开票的发票项目，TODO: 这里没有做时间约束，后面数据量大需要考虑
+@frappe.whitelist()
+def get_not_billed_item(args):
+	if isinstance(args, string_types):
+		args = json.loads(args)
+
+	party = args.get('party')
+	party_type = args.get('party_type')
+	company = args.get('company')
+	
+	items = []
+	if party_type == "Customer":
+		voucher_type = "Sales Invoice"
+		items = frappe.db.sql("""
+			select
+				si.name as sales_invoice_reference, sii.name as si_detail, sii.billed_amt, sii.actual_batch_qty, sii.actual_qty, sii.allow_zero_valuation_rate, sii.amount, sii.base_amount, sii.base_net_amount, sii.base_net_rate, sii.base_price_list_rate, sii.base_rate, sii.base_rate_with_margin, sii.conversion_factor, sii.cost_center, sii.delivered_by_supplier, sii.delivered_qty, sii.description, sii.discount_amount, sii.discount_percentage, sii.enable_deferred_revenue, sii.expense_account, sii.image, sii.income_account, sii.is_fixed_asset, sii.is_free_item, sii.item_code, sii.item_group, sii.item_name, sii.item_tax_rate, sii.margin_rate_or_amount, sii.margin_type, sii.net_amount, sii.net_rate, sii.page_break, sii.price_list_rate, sii.qty, sii.rate, sii.rate_with_margin, sii.stock_qty, sii.stock_uom, sii.total_weight, sii.uom, sii.warehouse, sii.weight_per_unit
+			from
+				`tab{voucher_type}` si
+			left join `tab{voucher_type} Item` sii
+			on sii.parent = si.name
+			where
+				si.{party_type} = %s and si.docstatus = 1 and si.company = %s and outstanding_amount > 0 
+				and sii.docstatus = 1 and sii.amount - sii.billed_amt > 0
+			order by
+				si.posting_date, si.name
+		""".format(**{
+			"voucher_type": voucher_type,
+			"party_type": scrub(party_type)
+		}), (party, company), as_dict=True)
+	if party_type == 'Supplier':
+		voucher_type = "Purchase Invoice"
+		items = frappe.db.sql("""
+			select
+				pi.name as purchase_invoice_reference, pii.name as pi_detail, pii.billed_amt, pii.allow_zero_valuation_rate, pii.amount, pii.base_amount, pii.base_net_amount, pii.base_net_rate, pii.base_price_list_rate, pii.base_rate, pii.conversion_factor, pii.cost_center, pii.description, pii.discount_amount, pii.discount_percentage, pii.enable_deferred_expense, pii.expense_account, pii.image, pii.include_exploded_items, pii.is_fixed_asset, pii.is_free_item, pii.item_code, pii.item_group, pii.item_name, pii.item_tax_amount, pii.item_tax_rate, pii.landed_cost_voucher_amount, pii.net_amount, pii.net_rate, pii.owner, pii.page_break, pii.price_list_rate, pii.qty, pii.rate, pii.received_qty, pii.rejected_qty, pii.rm_supp_cost, pii.stock_qty, pii.stock_uom, pii.total_weight, pii.uom, pii.valuation_rate, pii.warehouse, pii.weight_per_unit
+			from
+				`tab{voucher_type}` pi
+			left join `tab{voucher_type} Item` pii
+			on pii.parent = pi.name
+			where
+				pi.{party_type} = %s and pi.docstatus = 1 and pi.company = %s and outstanding_amount > 0 
+				and pii.docstatus = 1 and pii.amount - pii.billed_amt > 0
+			order by
+				pi.posting_date, pi.name
+		""".format(**{
+			"voucher_type": voucher_type,
+			"party_type": scrub(party_type)
+		}), (party, company), as_dict=True)
+
+	for item in items:
+		item.qty = (item.amount - item.billed_amt) / flt(item.rate)
+	
+	return items
 
 @frappe.whitelist()
 def get_outstanding_reference_documents(args):

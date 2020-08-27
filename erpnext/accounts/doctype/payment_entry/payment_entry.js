@@ -678,6 +678,7 @@ frappe.ui.form.on('Payment Entry', {
 					var total_negative_outstanding = 0;
 
 					$.each(r.message, function(i, d) {
+						// Change: 如果已付款金额分配完毕将不再添加项目
 						if (frm.doc.paid_amount < total_positive_outstanding) { return false }
 						var c = frm.add_child("references");
 						c.reference_doctype = d.voucher_type;

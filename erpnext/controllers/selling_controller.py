@@ -53,7 +53,9 @@ class SellingController(StockController):
 		super(SellingController, self).set_missing_values(for_validate)
 
 		# set contact and address details for customer, if they are not mentioned
-		self.set_missing_lead_customer_details()
+		# Change: 销售实际发票简化
+		if self.doctype not in ["Sales Invoice Record"]:
+			self.set_missing_lead_customer_details()
 		self.set_price_list_and_item_details(for_validate=for_validate)
 
 	def set_missing_lead_customer_details(self):

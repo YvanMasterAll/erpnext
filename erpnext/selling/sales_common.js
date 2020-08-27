@@ -69,13 +69,16 @@ erpnext.selling.SellingController = erpnext.TransactionController.extend({
 			return;
 		}
 
-		if(this.frm.fields_dict["items"].grid.get_field('item_code')) {
-			this.frm.set_query("item_code", "items", function() {
-				return {
-					query: "erpnext.controllers.queries.item_query",
-					filters: {'is_sales_item': 1}
-				}
-			});
+		// Change: 销售实际发票简化
+		if(me.frm.doctype != "Sales Invoice Record") {
+			if(this.frm.fields_dict["items"].grid.get_field('item_code')) {
+				this.frm.set_query("item_code", "items", function() {
+					return {
+						query: "erpnext.controllers.queries.item_query",
+						filters: {'is_sales_item': 1}
+					}
+				});
+			}
 		}
 
 		if(this.frm.fields_dict["packed_items"] &&

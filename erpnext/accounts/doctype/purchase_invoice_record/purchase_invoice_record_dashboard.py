@@ -6,7 +6,7 @@ def get_data():
 		'fieldname': 'purchase_invoice_record',
 		'non_standard_fieldnames': {},
 		'internal_links': {
-			'Purchase Invoice': ['items', 'purchase_invoice']
+			'Purchase Invoice': ['items', 'purchase_invoice_reference']
 		},
 		'transactions': [
 			{

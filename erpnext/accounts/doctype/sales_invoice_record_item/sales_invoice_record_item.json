@@ -8,6 +8,7 @@
  "engine": "InnoDB",
  "field_order": [
   "barcode",
+  "sales_invoice_reference",
   "item_code",
   "col_break1",
   "item_name",
@@ -85,7 +86,6 @@
   "actual_batch_qty",
   "actual_qty",
   "edit_references",
-  "sales_invoice",
   "si_detail",
   "column_break_74",
   "delivery_note",
@@ -98,6 +98,14 @@
   "page_break"
  ],
  "fields": [
+  {
+	"fieldname": "sales_invoice_reference",
+	"fieldtype": "Link",
+	"in_list_view": 1,
+	"label": "Sales Invoice Reference",
+	"options": "Sales Invoice",
+	"reqd": 1
+  },
   {
    "fieldname": "barcode",
    "fieldtype": "Data",
@@ -664,18 +672,6 @@
    "label": "References"
   },
   {
-   "fieldname": "sales_invoice",
-   "fieldtype": "Link",
-   "label": "Sales Invoice",
-   "no_copy": 1,
-   "oldfieldname": "sales_invoice",
-   "oldfieldtype": "Link",
-   "options": "Sales Invoice",
-   "print_hide": 1,
-   "read_only": 1,
-   "search_index": 1
-  },
-  {
    "fieldname": "si_detail",
    "fieldtype": "Data",
    "hidden": 1,
@@ -685,7 +681,8 @@
    "oldfieldtype": "Data",
    "print_hide": 1,
    "read_only": 1,
-   "search_index": 1
+   "search_index": 1,
+   "reqd": 1
   },
   {
    "fieldname": "column_break_74",

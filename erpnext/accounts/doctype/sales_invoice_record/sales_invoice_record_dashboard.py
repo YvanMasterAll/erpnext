@@ -6,7 +6,7 @@ def get_data():
 		'fieldname': 'sales_invoice_record',
 		'non_standard_fieldnames': {},
 		'internal_links': {
-			'Sales Invoice': ['items', 'sales_invoice']
+			'Sales Invoice': ['items', 'sales_invoice_reference']
 		},
 		'transactions': [
 			{

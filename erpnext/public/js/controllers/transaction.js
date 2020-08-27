@@ -583,6 +583,36 @@ erpnext.TransactionController = erpnext.taxes_and_totals.extend({
 										let key = item.name;
 										me.apply_rule_on_other_items({key: item});
 									}
+								},
+								() => {
+									// Change: 销售实际发票简化
+									if(item.sales_invoice_reference && item.item_code) {
+										frappe.call({
+											method: "erpnext.accounts.doctype.sales_invoice_item.sales_invoice_item.get_si_detail",
+											args: {
+												"sales_invoice_reference": item.sales_invoice_reference,
+												"item_code": item.item_code
+											},
+											callback: function(r, rt) {
+												frappe.model.set_value(cdt, cdn, "si_detail", r.message[0][0])
+											}
+										})
+									}
+								},
+								() => {
+									// Change: 采购实际发票简化
+									if(item.purchase_invoice_reference && item.item_code) {
+										frappe.call({
+											method: "erpnext.accounts.doctype.purchase_invoice_item.purchase_invoice_item.get_pi_detail",
+											args: {
+												"purchase_invoice_reference": item.purchase_invoice_reference,
+												"item_code": item.item_code
+											},
+											callback: function(r, rt) {
+												frappe.model.set_value(cdt, cdn, "pi_detail", r.message[0][0])
+											}
+										})
+									}
 								}
 							]);
 						}

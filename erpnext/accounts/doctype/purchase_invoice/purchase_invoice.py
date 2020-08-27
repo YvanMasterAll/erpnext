@@ -1154,10 +1154,8 @@ def on_doctype_update():
 @frappe.whitelist()
 def make_purchase_invoice_record(source_name, target_doc=None, ignore_permissions=False):
 	def postprocess(source, target):
-		set_missing_values(source, target)
-	
-	def set_missing_values(source, target):
-		target.run_method("calculate_taxes_and_totals")
+		target.billed_amt = flt(source.total) - flt(source.per_billed)
+		return
 
 	def update_item(source, target, source_parent):
 		target.amount = flt(source.amount) - flt(source.billed_amt)
@@ -1182,26 +1180,12 @@ def make_purchase_invoice_record(source_name, target_doc=None, ignore_permission
 			"doctype": "Purchase Invoice Record Item",
 			"field_map": {
 				"name": "pi_detail",
-				"parent": "purchase_invoice",
+				"parent": "purchase_invoice_reference",
 			},
 			"postprocess": update_item,
 			"condition": lambda doc: (doc.base_amount==0 or abs(doc.billed_amt) < abs(doc.amount))
-		},
-		"Purchase Taxes and Charges": {
-			"doctype": "Purchase Taxes and Charges",
-			"field_map": {
-				"name": "pt_detail",
-			},
-			"postprocess": update_taxes,
-			"add_if_empty": True
 		}
 	}
-
-	if frappe.get_single("Accounts Settings").automatically_fetch_payment_terms == 1:
-		fields["Payment Schedule"] = {
-			"doctype": "Payment Schedule",
-			"add_if_empty": True
-		}
 
 	doc = get_mapped_doc("Purchase Invoice", source_name, fields, target_doc, postprocess, ignore_permissions=ignore_permissions)
 

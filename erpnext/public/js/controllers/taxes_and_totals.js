@@ -56,6 +56,18 @@ erpnext.taxes_and_totals = erpnext.payments.extend({
 			this.frm.doc.paid_amount = flt(this.frm.doc.grand_total, precision("grand_total"));
 		}
 
+		// Change: 销售实际发票简化
+		if(in_list(["Sales Invoice Record", "Purchase Invoice Record"], this.frm.doc.doctype)) {
+			var me = this
+			var billed_amt = 0
+			$.each(this.frm.doc["items"] || [], function(i, item) {
+				if(item.qty && item.rate) {
+					billed_amt += flt(item.rate * item.qty, precision("amount", item))
+				}
+				me.frm.doc.billed_amt = billed_amt
+			});
+		}
+
 		this.frm.refresh_fields();
 	},
 

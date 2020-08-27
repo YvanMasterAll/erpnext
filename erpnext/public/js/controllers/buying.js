@@ -80,21 +80,23 @@ erpnext.buying.BuyingController = erpnext.TransactionController.extend({
 				return{	query: "erpnext.controllers.queries.supplier_query" }});
 		}
 
-		this.frm.set_query("item_code", "items", function() {
-			if (me.frm.doc.is_subcontracted == "Yes") {
-				return{
-					query: "erpnext.controllers.queries.item_query",
-					filters:{ 'is_sub_contracted_item': 1 }
+		// Change: 采购实际发票简化
+		if (this.frm.doc.doctype !== "Purchase Invoice Record") {
+			this.frm.set_query("item_code", "items", function() {
+				if (me.frm.doc.is_subcontracted == "Yes") {
+					return{
+						query: "erpnext.controllers.queries.item_query",
+						filters:{ 'is_sub_contracted_item': 1 }
+					}
 				}
-			}
-			else {
-				return{
-					query: "erpnext.controllers.queries.item_query",
-					filters: {'is_purchase_item': 1}
+				else {
+					return{
+						query: "erpnext.controllers.queries.item_query",
+						filters: {'is_purchase_item': 1}
+					}
 				}
-			}
-		});
-
+			});
+		}
 
 		this.frm.set_query("manufacturer", "items", function(doc, cdt, cdn) {
 			const row = locals[cdt][cdn];

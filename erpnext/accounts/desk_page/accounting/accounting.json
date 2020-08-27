@@ -143,6 +143,11 @@
    "type": "Report"
   },
   {
+    "label": "Sales Invoice Details",
+    "link_to": "Sales Invoice Details",
+    "type": "Report"
+  },
+  {
    "label": "General Ledger",
    "link_to": "General Ledger",
    "type": "Report"

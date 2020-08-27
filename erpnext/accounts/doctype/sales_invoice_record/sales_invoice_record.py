@@ -45,21 +45,11 @@ class SalesInvoiceRecord(SellingController):
 			'target_parent_field': 'per_billed',
 			'source_field': 'amount',
 			'join_field': 'si_detail',
-			'percent_join_field': 'sales_invoice',
+			'percent_join_field': 'sales_invoice_reference',
 			'status_field': 'billing_status',
 			'keyword': 'Billed',
 			'overflow_type': 'billing'
-		}, 
-		# Change: 这里添加子表验证，本地测试没有问题，但是线上却报错：pymysql.err.InternalError: (1093, "Table 'tabSales Taxes and Charges' is specified twice, both as a target for 'UPDATE' and as a separate source for data")
-		# {
-		# 	'source_dt': 'Sales Taxes and Charges',
-		# 	'target_field': 'billed_amt',
-		# 	'target_ref_field': 'tax_amount',
-		# 	'target_dt': 'Sales Taxes and Charges',
-		# 	'join_field': 'st_detail',
-		# 	'source_field': 'tax_amount',
-		# }
-		]
+		}]
 
 	def set_indicator(self):
 		"""Set indicator for portal"""
@@ -82,33 +72,15 @@ class SalesInvoiceRecord(SellingController):
 	def validate(self):
 		super(SalesInvoiceRecord, self).validate()
 
-		self.validate_proj_cust()
 		self.validate_with_previous_doc()
-		self.validate_uom_is_integer("stock_uom", "stock_qty")
 		self.validate_uom_is_integer("uom", "qty")
-		self.check_sales_invoice_on_hold_or_close("sales_invoice")
-		self.validate_debit_to_acc()
+		self.check_sales_invoice_on_hold_or_close("sales_invoice_reference")
 		self.add_remarks()
-		self.validate_write_off_account()
-		self.validate_account_for_change_amount()
 		self.validate_item_cost_centers()
-
-		# validate service stop date to lie in between start and end date
-		validate_service_stop_date(self)
-
-		if not self.is_opening:
-			self.is_opening = 'No'
 
 		self.set_status()
 
-	def before_save(self):
-		set_account_for_mode_of_payment(self)
-
 	def on_submit(self):
-		if not self.auto_repeat:
-			frappe.get_doc('Authorization Control').validate_approving_authority(self.doctype,
-				self.company, self.base_grand_total, self)
-
 		self.check_prev_docstatus()
 
 		self.update_prevdoc_status()
@@ -122,38 +94,18 @@ class SalesInvoiceRecord(SellingController):
 		frappe.db.set(self, 'status', 'Cancelled')
 
 	def on_update(self):
-		self.set_paid_amount()
-
-	def set_paid_amount(self):
-		paid_amount = 0.0
-		base_paid_amount = 0.0
-		for data in self.payments:
-			data.base_amount = flt(data.amount*self.conversion_rate, self.precision("base_paid_amount"))
-			paid_amount += data.amount
-			base_paid_amount += data.base_amount
-
-		self.paid_amount = paid_amount
-		self.base_paid_amount = base_paid_amount
+		return
 
 	def check_prev_docstatus(self):
 		for d in self.get('items'):
-			if d.sales_invoice and frappe.db.get_value("Sales Invoice", d.sales_invoice, "docstatus") != 1:
-				frappe.throw(_("Sales Invoice {0} is not submitted").format(d.sales_invoice))
+			if d.sales_invoice_reference and frappe.db.get_value("Sales Invoice", d.sales_invoice_reference, "docstatus") != 1:
+				frappe.throw(_("Sales Invoice {0} is not submitted").format(d.sales_invoice_reference))
 
 	def set_status(self, update=False, status=None, update_modified=True):
 		if self.is_new():
 			if self.get('amended_from'):
 				self.status = 'Draft'
 			return
-
-		precision = self.precision("outstanding_amount")
-		outstanding_amount = flt(self.outstanding_amount, precision)
-		due_date = getdate(self.due_date)
-		nowdate = getdate()
-
-		discounting_status = None
-		if self.is_discounted:
-			discountng_status = get_discounting_status(self.name)
 
 		if not status:
 			if self.docstatus == 2:
@@ -172,22 +124,14 @@ class SalesInvoiceRecord(SellingController):
 			self.set_posting_time = 1
 
 		self.validate_posting_time()
-
-	def validate_proj_cust(self):
-		"""check for does customer belong to same project as entered.."""
-		if self.project and self.customer:
-			res = frappe.db.sql("""select name from `tabProject`
-				where name = %s and (customer = %s or customer is null or customer = '')""",
-				(self.project, self.customer))
-			if not res:
-				throw(_("Customer {0} does not belong to project {1}").format(self.customer,self.project))
 	
 	def validate_with_previous_doc(self):
 		super(SalesInvoiceRecord, self).validate_with_previous_doc({
-			"Sales Invoice": {
-				"ref_dn_field": "sales_invoice",
-				"compare_fields": [["customer", "="], ["company", "="], ["project", "="], ["currency", "="]]
-			},
+			# Change: 因为销售发票和发票已经分道扬镳，所以就没有必要验证属性
+			# "Sales Invoice": {
+			# 	"ref_dn_field": "sales_invoice",
+			# 	"compare_fields": [["customer", "="], ["company", "="], ["project", "="], ["currency", "="]]
+			# },
 			"Sales Invoice Item": {
 				"ref_dn_field": "si_detail",
 				"compare_fields": [["item_code", "="], ["uom", "="], ["conversion_factor", "="]],
@@ -202,43 +146,8 @@ class SalesInvoiceRecord(SellingController):
 			# },
 		})
 
-		if cint(frappe.db.get_single_value('Selling Settings', 'maintain_same_sales_rate')) and not self.is_return:
-			self.validate_rate_with_reference_doc([
-				["Sales Invoice", "sales_invoice", "si_detail"],
-			])
-	
-	def validate_debit_to_acc(self):
-		account = frappe.get_cached_value("Account", self.debit_to,
-			["account_type", "report_type", "account_currency"], as_dict=True)
-
-		if not account:
-			frappe.throw(_("Debit To is required"), title=_("Account Missing"))
-
-		if account.report_type != "Balance Sheet":
-			frappe.throw(_("Please ensure {} account is a Balance Sheet account. \
-					You can change the parent account to a Balance Sheet account or select a different account.")
-				.format(frappe.bold("Debit To")), title=_("Invalid Account"))
-
-		if self.customer and account.account_type != "Receivable":
-			frappe.throw(_("Please ensure {} account is a Receivable account. \
-					Change the account type to Receivable or select a different account.")
-				.format(frappe.bold("Debit To")), title=_("Invalid Account"))
-
-		self.party_account_currency = account.account_currency
-
 	def add_remarks(self):
 		if not self.remarks: self.remarks = _('No Remarks')
-
-	def validate_write_off_account(self):
-		if flt(self.write_off_amount) and not self.write_off_account:
-			self.write_off_account = frappe.get_cached_value('Company',  self.company,  'write_off_account')
-
-		if flt(self.write_off_amount) and not self.write_off_account:
-			msgprint(_("Please enter Write Off Account"), raise_exception=1)
-
-	def validate_account_for_change_amount(self):
-		if flt(self.change_amount) and not self.account_for_change_amount:
-			msgprint(_("Please enter Account for Change Amount"), raise_exception=1)
 
 	def validate_fixed_asset(self):
 		for d in self.get("items"):
@@ -267,28 +176,3 @@ class SalesInvoiceRecord(SellingController):
 			cost_center_company = frappe.get_cached_value("Cost Center", item.cost_center, "company")
 			if cost_center_company != self.company:
 				frappe.throw(_("Row #{0}: Cost Center {1} does not belong to company {2}").format(frappe.bold(item.idx), frappe.bold(item.cost_center), frappe.bold(self.company)))
-
-def get_discounting_status(sales_invoice):
-	status = None
-
-	invoice_discounting_list = frappe.db.sql("""
-		select status
-		from `tabInvoice Discounting` id, `tabDiscounted Invoice` d
-		where
-			id.name = d.parent
-			and d.sales_invoice=%s
-			and id.docstatus=1
-			and status in ('Disbursed', 'Settled')
-	""", sales_invoice)
-
-	for d in invoice_discounting_list:
-		status = d[0]
-		if status == "Disbursed":
-			break
-
-	return status
-
-def set_account_for_mode_of_payment(self):
-	for data in self.payments:
-		if not data.account:
-			data.account = get_bank_cash_account(data.mode_of_payment, self.company).get("account")

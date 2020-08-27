@@ -38,6 +38,12 @@ def get_data():
 				},
 				{
 					"type": "report",
+					"name": "Sales Invoice Details",
+					"doctype": "Sales Invoice",
+					"is_query_report": False
+				},
+				{
+					"type": "report",
 					"name": "Accounts Receivable Summary",
 					"doctype": "Sales Invoice",
 					"is_query_report": True
