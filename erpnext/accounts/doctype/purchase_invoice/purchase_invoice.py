@@ -373,6 +373,12 @@ class PurchaseInvoice(BuyingController):
 		super(PurchaseInvoice, self).on_submit()
 
 		self.check_prev_docstatus()
+
+		# Change: status updating bypassed for is_return
+		if self.is_return:
+			# NOTE status updating bypassed for is_return
+			self.status_updater = []
+			
 		self.update_status_updater_args()
 		self.update_prevdoc_status()
 
@@ -939,6 +945,11 @@ class PurchaseInvoice(BuyingController):
 		super(PurchaseInvoice, self).on_cancel()
 
 		self.check_on_hold_or_closed_status()
+
+		# Change: status updating bypassed for is_return
+		if self.is_return:
+			# NOTE status updating bypassed for is_return
+			self.status_updater = []
 
 		self.update_status_updater_args()
 		self.update_prevdoc_status()

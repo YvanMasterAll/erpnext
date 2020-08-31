@@ -26,11 +26,20 @@ from erpnext.accounts.doctype.accounting_dimension.accounting_dimension import g
 # 10. This reports is based on all GL Entries that are made against account_type "Receivable" or "Payable"
 
 def execute(filters=None):
+	if not filters:
+		return [], []
+
+	validate_filters(filters)
+
 	args = {
 		"party_type": "Customer",
 		"naming_by": ["Selling Settings", "cust_master_name"],
 	}
 	return SalesInvoiceDetailsReport(filters).run(args)
+
+def validate_filters(filters): 
+	if filters.from_date and filters.from_date > filters.report_date:
+		frappe.throw(_("From Date must be before To Date"))
 
 class SalesInvoiceDetailsReport(object):
 	def __init__(self, filters=None):
@@ -243,16 +252,20 @@ class SalesInvoiceDetailsReport(object):
 
 	def append_row(self, row):
 		invoice_details_list = self.invoice_details.get(row.voucher_no, [])
+		# 只添加时间范围内的项目
+		append_flag = True
+		if self.filters.from_date and self.filters.from_date > str(row.posting_date):
+			append_flag = False
 		for i, invoice_details in enumerate(invoice_details_list):
 			if i == 0:
 				son_row = copy.copy(row)
-				self.doing_append_row(son_row, invoice_details)
+				self.doing_append_row(son_row, invoice_details, append_flag)
 			else:
 				son_row = frappe._dict()
 				invoice_details.pop("due_date", None)
-				self.doing_append_row(son_row, invoice_details)
+				self.doing_append_row(son_row, invoice_details, append_flag)
 
-	def doing_append_row(self, row, invoice_details):
+	def doing_append_row(self, row, invoice_details, append_flag):
 		self.allocate_future_payments(row)
 		self.set_invoice_details(row, invoice_details)
 		self.set_party_details(row)
@@ -266,13 +279,22 @@ class SalesInvoiceDetailsReport(object):
 		# 计算合计金额(应收账款)和开票金额
 		if self.previous_row == None:
 			row.outstanding = row.amount - row.paid
-			row.not_billed_amt = row.amount - row.billed_amt
+			if invoice_details.is_return or invoice_details.status == "Credit Note Issued" or invoice_details.status == "Debit Note Issued":
+				row.not_billed_amt = 0
+				row.billed_amt = 0
+			else:
+				row.not_billed_amt = abs(row.amount) - row.billed_amt
 		else:
 			row.outstanding = self.previous_row.outstanding + row.amount - (row.paid or 0)
-			row.not_billed_amt = self.previous_row.not_billed_amt + row.amount - row.billed_amt
+			if invoice_details.is_return or invoice_details.status == "Credit Note Issued" or invoice_details.status == "Debit Note Issued":
+				row.not_billed_amt = self.previous_row.not_billed_amt
+				row.billed_amt = 0
+			else:	
+				row.not_billed_amt = self.previous_row.not_billed_amt + abs(row.amount) - row.billed_amt
 		self.previous_row = row
 
-		self.data.append(row)
+		if append_flag:
+			self.data.append(row)
 
 	def set_invoice_details(self, row, invoice_details):
 		if row.due_date:
@@ -321,7 +343,7 @@ class SalesInvoiceDetailsReport(object):
 		if self.party_type == "Customer":
 			si_list = frappe.db.sql("""
 				select 
-					si.name, si.due_date, si.po_no, si_item.base_amount, si_item.amount, si_item.billed_amt, si_item.item_name, si_item.qty, si_item.rate
+					si.name, si.status, si.is_return, si.due_date, si.po_no, si_item.base_amount, si_item.amount, si_item.billed_amt, si_item.item_name, si_item.qty, si_item.rate
 				from 
 					`tabSales Invoice` si, `tabSales Invoice Item` si_item
 				where 
@@ -347,11 +369,18 @@ class SalesInvoiceDetailsReport(object):
 
 		if self.party_type == "Supplier":
 			for pi in frappe.db.sql("""
-				select name, due_date, bill_no, bill_date
-				from `tabPurchase Invoice`
-				where posting_date <= %s
-			""", self.filters.report_date, as_dict=1):
-				self.invoice_details.setdefault(pi.name, pi)
+				select 
+					pi.name, pi.status, pi.is_return, pi.due_date, pi.bill_date, pi.bill_no, pi_item.base_amount, pi_item.amount, pi_item.billed_amt, pi_item.item_name, pi_item.qty, pi_item.rate
+				from 
+					`tabPurchase Invoice` pi, `tabPurchase Invoice Item` pi_item
+				where 
+					pi.name = pi_item.parent
+					and posting_date <= %s
+			""",self.filters.report_date, as_dict=1):
+				if self.invoice_details.get(pi.name) != None:
+					self.invoice_details.setdefault(pi.name, self.invoice_details.get(pi.name).append(pi))
+				else:
+					self.invoice_details.setdefault(pi.name, [pi])
 
 		# Invoices booked via Journal Entries
 		journal_entries = frappe.db.sql("""
@@ -745,8 +774,12 @@ class SalesInvoiceDetailsReport(object):
 			# note: fieldname is still `credit_note`
 			self.add_column(_('Debit Note'), fieldname='credit_note')
 		# self.add_column(_('Invoiced Amount'), fieldname='invoiced')
-		self.add_column(_('收款金额'), fieldname='paid')
-		self.add_column(_('应收账款'), fieldname='outstanding')
+		if self.party_type == "Customer":
+			self.add_column(_('收款金额'), fieldname='paid')
+			self.add_column(_('应收账款'), fieldname='outstanding')
+		else:
+			self.add_column(_('付款金额'), fieldname='paid')
+			self.add_column(_('应付账款'), fieldname='outstanding')
 
 		self.add_column(_('开票金额'), fieldname='billed_amt', fieldtype='Currency', options='currency')
 		self.add_column(_('未开票金额'), fieldname='not_billed_amt', fieldtype='Currency', options='currency')

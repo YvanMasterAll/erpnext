@@ -227,9 +227,11 @@ def make_return_doc(doctype, source_name, target_doc=None):
 		for tax in doc.get("taxes"):
 			if tax.charge_type == "Actual":
 				tax.tax_amount = -1 * tax.tax_amount
-
+				
 		if doc.get("is_return"):
 			if doc.doctype == 'Sales Invoice':
+				# Change: 如果是退货不勾选更新库存，减少一步操作(关闭订单)
+				doc.update_stock = 0
 				# Change: 初始化已付款和已开票百分比
 				doc.per_billed = 100
 				doc.per_paid = 0
@@ -247,7 +249,11 @@ def make_return_doc(doctype, source_name, target_doc=None):
 						'base_amount': -1 * base_paid_amount
 					})
 			elif doc.doctype == 'Purchase Invoice':
+				# Change: 如果是退货不勾选更新库存，减少一步操作(关闭订单)
+				doc.update_stock = 0
+				# Change: 初始化已付款和已开票百分比
 				doc.per_billed = 100
+				doc.per_paid = 0
 				doc.paid_amount = -1 * source.paid_amount
 				doc.base_paid_amount = -1 * source.base_paid_amount
 				doc.payment_terms_template = ''

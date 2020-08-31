@@ -229,7 +229,7 @@ def update_outstanding_amt(account, party_type, party, against_voucher_type, aga
 		ref_doc.outstanding_amount = bal
 		values = { 'outstanding_amount': bal }
 		# Change: 更新付款百分比
-		if against_voucher_type in ["Sales Invoice", "Purchase Invoice"]:
+		if not on_cancel and against_voucher_type in ["Sales Invoice", "Purchase Invoice"]:
 			values['per_paid'] = (ref_doc.total - abs(ref_doc.outstanding_amount))*100/ref_doc.total
 		frappe.db.set_value(against_voucher_type, against_voucher, values)
 

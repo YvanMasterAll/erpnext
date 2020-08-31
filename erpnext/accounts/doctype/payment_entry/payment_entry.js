@@ -147,6 +147,18 @@ frappe.ui.form.on('Payment Entry', {
 		frm.events.hide_unhide_fields(frm);
 		frm.events.set_dynamic_labels(frm);
 		frm.events.show_general_ledger(frm);
+		// Change: 设置默认的参考编号和参考日期
+		if(frm.doc.docstatus==0) {
+			if(!frm.doc.reference_date) {
+				frm.set_value('reference_date', frappe.datetime.nowdate());
+			}
+			if(!frm.doc.reference_no) {
+				frm.set_value('reference_no', 999);
+			}
+			if(!frm.doc.mode_of_payment) {
+				frm.set_value('mode_of_payment', '银行汇款')
+			}
+		}
 	},
 
 	company: function(frm) {

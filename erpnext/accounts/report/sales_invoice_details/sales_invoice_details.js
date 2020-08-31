@@ -12,6 +12,12 @@ frappe.query_reports["Sales Invoice Details"] = {
 			"default": frappe.defaults.get_user_default("Company")
 		},
 		{
+			"fieldname":"from_date",
+			"label": __("From Date"),
+			"fieldtype": "Date",
+			// "default": frappe.datetime.add_months(frappe.datetime.get_today(), -1),
+		},
+		{
 			"fieldname":"report_date",
 			"label": __("Posting Date"),
 			"fieldtype": "Date",

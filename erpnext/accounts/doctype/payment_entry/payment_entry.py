@@ -278,8 +278,8 @@ class PaymentEntry(AccountsController):
 				continue
 
 			if d.reference_doctype in ("Sales Invoice", "Purchase Invoice", "Fees"):
-				outstanding_amount, is_return = frappe.get_cached_value(d.reference_doctype, d.reference_name, ["outstanding_amount", "is_return"])
-				if outstanding_amount <= 0 and not is_return:
+				outstanding_amount, is_return, status = frappe.get_cached_value(d.reference_doctype, d.reference_name, ["outstanding_amount", "is_return", "status"])
+				if outstanding_amount <= 0 and not is_return and status != "Credit Note Issued" and status != "Debit Note Issued":
 					no_oustanding_refs.setdefault(d.reference_doctype, []).append(d)
 
 		for k, v in no_oustanding_refs.items():
