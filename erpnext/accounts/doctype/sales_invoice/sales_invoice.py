@@ -59,9 +59,10 @@ class SalesInvoice(SellingController):
 		elif self.outstanding_amount > 0 and getdate(self.due_date) >= getdate(nowdate()):
 			self.indicator_color = "orange"
 			self.indicator_title = _("Unpaid")
-		elif self.outstanding_amount > 0 and getdate(self.due_date) < getdate(nowdate()):
-			self.indicator_color = "red"
-			self.indicator_title = _("Overdue")
+		# Change: 发票当做出货单所以不计逾期状态
+		# elif self.outstanding_amount > 0 and getdate(self.due_date) < getdate(nowdate()):
+		# 	self.indicator_color = "red"
+		# 	self.indicator_title = _("Overdue")
 		elif cint(self.is_return) == 1:
 			self.indicator_title = _("Return")
 			self.indicator_color = "darkgrey"
@@ -1259,8 +1260,9 @@ class SalesInvoice(SellingController):
 			elif self.docstatus == 1:
 				if outstanding_amount > 0 and due_date < nowdate and self.is_discounted and discountng_status=='Disbursed':
 					self.status = "Overdue and Discounted"
-				elif outstanding_amount > 0 and due_date < nowdate:
-					self.status = "Overdue"
+				# Change: 发票当做出货单所以不计逾期状态
+				# elif outstanding_amount > 0 and due_date < nowdate:
+				# 	self.status = "Overdue"
 				elif outstanding_amount > 0 and due_date >= nowdate and self.is_discounted and discountng_status=='Disbursed':
 					self.status = "Unpaid and Discounted"
 				elif outstanding_amount > 0 and due_date >= nowdate:

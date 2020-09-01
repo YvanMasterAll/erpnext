@@ -264,8 +264,18 @@ frappe.ui.form.on('Stock Entry', {
 	},
 
 	stock_entry_type: function(frm){
+		console.log(1111)
 		frm.remove_custom_button('Bill of Materials', "Get items from");
 		frm.events.show_bom_custom_button(frm);
+		// Change: 自动设置目标仓库
+		if(frm.doc.stock_entry_type === "返修退回") {
+			frm.set_value("from_warehouse", "")
+			frm.set_value("to_warehouse", "返修仓库 - 中")
+		}
+		if(frm.doc.stock_entry_type === "返修发出") {
+			frm.set_value("to_warehouse", "")
+			frm.set_value("from_warehouse", "返修仓库 - 中")
+		}
 	},
 
 	purpose: function(frm) {

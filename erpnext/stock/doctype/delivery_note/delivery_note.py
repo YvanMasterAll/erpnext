@@ -310,6 +310,8 @@ class DeliveryNote(SellingController):
 	def make_return_invoice(self):
 		try:
 			return_invoice = make_sales_invoice(self.name)
+			# Change: 从销售退货单创建信用票据不选中更新库存
+			return_invoice.update_stock = False
 			return_invoice.is_return = True
 			return_invoice.save()
 			return_invoice.submit()

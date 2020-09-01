@@ -279,14 +279,26 @@ class SalesInvoiceDetailsReport(object):
 		# 计算合计金额(应收账款)和开票金额
 		if self.previous_row == None:
 			row.outstanding = row.amount - row.paid
-			if invoice_details.is_return or invoice_details.status == "Credit Note Issued" or invoice_details.status == "Debit Note Issued":
+			if invoice_details.is_return:
+				credit_note = 0
+				if row.credit_note:
+					credit_note = row.credit_note
+				row.billed_amt = -credit_note
+				row.not_billed_amt = -credit_note
+			elif invoice_details.status == "Credit Note Issued" or invoice_details.status == "Debit Note Issued":
 				row.not_billed_amt = 0
 				row.billed_amt = 0
 			else:
 				row.not_billed_amt = abs(row.amount) - row.billed_amt
 		else:
 			row.outstanding = self.previous_row.outstanding + row.amount - (row.paid or 0)
-			if invoice_details.is_return or invoice_details.status == "Credit Note Issued" or invoice_details.status == "Debit Note Issued":
+			if invoice_details.is_return:
+				credit_note = 0
+				if row.credit_note:
+					credit_note = row.credit_note
+				row.billed_amt = -credit_note
+				row.not_billed_amt = self.previous_row.not_billed_amt - credit_note
+			elif invoice_details.status == "Credit Note Issued" or invoice_details.status == "Debit Note Issued":
 				row.not_billed_amt = self.previous_row.not_billed_amt
 				row.billed_amt = 0
 			else:	
@@ -759,10 +771,6 @@ class SalesInvoiceDetailsReport(object):
 		self.add_column(label=_('Rate'), fieldname='rate', fieldtype='Currency', options='currency')
 		self.add_column(label=_('Quantity'), fieldname='qty', fieldtype='Float', width=80)
 		self.add_column(label=_('Amount'), fieldname='amount', fieldtype='Currency', options='currency')
-
-		if self.party_type == "Supplier":
-			self.add_column(label=_('Bill No'), fieldname='bill_no', fieldtype='Data')
-			self.add_column(label=_('Bill Date'), fieldname='bill_date', fieldtype='Date')
 
 		if self.filters.based_on_payment_terms:
 			self.add_column(label=_('Payment Term'), fieldname='payment_term', fieldtype='Data')

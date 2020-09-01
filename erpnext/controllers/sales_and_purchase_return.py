@@ -233,7 +233,7 @@ def make_return_doc(doctype, source_name, target_doc=None):
 				# Change: 如果是退货不勾选更新库存，减少一步操作(关闭订单)
 				doc.update_stock = 0
 				# Change: 初始化已付款和已开票百分比
-				doc.per_billed = 100
+				doc.per_billed = 0
 				doc.per_paid = 0
 				doc.set('payments', [])
 				for data in source.payments:
@@ -252,7 +252,7 @@ def make_return_doc(doctype, source_name, target_doc=None):
 				# Change: 如果是退货不勾选更新库存，减少一步操作(关闭订单)
 				doc.update_stock = 0
 				# Change: 初始化已付款和已开票百分比
-				doc.per_billed = 100
+				doc.per_billed = 0
 				doc.per_paid = 0
 				doc.paid_amount = -1 * source.paid_amount
 				doc.base_paid_amount = -1 * source.base_paid_amount
