@@ -252,6 +252,26 @@ class SalesInvoiceDetailsReport(object):
 
 	def append_row(self, row):
 		invoice_details_list = self.invoice_details.get(row.voucher_no, [])
+		# 添加预付款项目
+		if row.voucher_type == "Payment Entry" and row.paid > 0:
+			advanced_payment_row = frappe._dict(
+				voucher_type = row.voucher_type,
+				voucher_no = row.voucher_no,
+				party = row.party,
+				posting_date = row.posting_date,
+				remarks = row.remarks,
+				account_currency = row.account_currency,
+				invoiced = 0.0,
+				paid = row.paid,
+				credit_note = 0.0,
+				outstanding = 0.0,
+				item_name = "预付款",
+				rate = 0.0,
+				qty = 0.0,
+				amount = 0.0,
+				billed_amt = 0.0
+			)
+			invoice_details_list.append(advanced_payment_row)
 		# 只添加时间范围内的项目
 		append_flag = True
 		if self.filters.from_date and self.filters.from_date > str(row.posting_date):
