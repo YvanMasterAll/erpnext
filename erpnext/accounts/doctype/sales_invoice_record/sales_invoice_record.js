@@ -234,7 +234,7 @@ frappe.ui.form.on('Sales Invoice Record', {
 						Object.keys(d).forEach(key => {
 							c[key] = d[key]
 						})
-						c.qty = not_billed_amt / flt(c.rate)
+						c.qty = not_billed_amt / c.rate
 					})
 					frm.cscript.calculate_taxes_and_totals()
 					frm.refresh_fields()

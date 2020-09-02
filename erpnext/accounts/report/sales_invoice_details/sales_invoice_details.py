@@ -66,7 +66,7 @@ class SalesInvoiceDetailsReport(object):
 		self.party_type = self.filters.party_type
 		self.party_details = {}
 		self.invoices = set()
-		self.skip_total_row = 1
+		self.skip_total_row = 0
 		self.previous_row = None
 
 		if self.filters.get('group_by_party'):
@@ -836,7 +836,7 @@ class SalesInvoiceDetailsReport(object):
 		# 	self.add_column(label=_('Supplier Group'), fieldname='supplier_group', fieldtype='Link',
 		# 		options='Supplier Group')
 
-		self.add_column(label=_('Remarks'), fieldname='remarks', fieldtype='Text', width=200)
+		self.add_column(label=_('Remarks'), fieldname='remarks', fieldtype='Text', width=400)
 
 	def add_column(self, label, fieldname=None, fieldtype='Currency', options=None, width=120):
 		if not fieldname: fieldname = scrub(label)

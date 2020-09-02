@@ -638,7 +638,6 @@
     {
       "fieldname": "pi_detail",
       "fieldtype": "Data",
-      "hidden": 1,
       "label": "Purchase Invoice Item",
       "no_copy": 1,
       "oldfieldname": "pi_detail",

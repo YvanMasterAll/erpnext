@@ -674,7 +674,6 @@
   {
    "fieldname": "si_detail",
    "fieldtype": "Data",
-   "hidden": 1,
    "label": "Sales Invoice Item",
    "no_copy": 1,
    "oldfieldname": "si_detail",
