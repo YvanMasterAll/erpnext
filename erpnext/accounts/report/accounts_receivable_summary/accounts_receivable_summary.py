@@ -28,6 +28,8 @@ class AccountsReceivableSummary(ReceivablePayableReport):
 	def get_data(self, args):
 		self.data = []
 
+		# 增加汇总判断
+		args["is_summary"] = True
 		self.receivables = ReceivablePayableReport(self.filters).run(args)[1]
 
 		self.get_party_total(args)
@@ -77,11 +79,18 @@ class AccountsReceivableSummary(ReceivablePayableReport):
 			"paid": 0.0,
 			"credit_note": 0.0,
 			"outstanding": 0.0,
+			"billed_amt": 0.0,
+			"not_billed_amt": 0.0,
 			"range1": 0.0,
 			"range2": 0.0,
 			"range3": 0.0,
 			"range4": 0.0,
 			"range5": 0.0,
+			"range6": 0.0,
+			"range7": 0.0,
+			"range8": 0.0,
+			"range9": 0.0,
+			"range10": 0.0,
 			"sales_person": []
 		}))
 
@@ -108,9 +117,11 @@ class AccountsReceivableSummary(ReceivablePayableReport):
 
 		self.add_column(_('Advance Amount'), fieldname='advance')
 		self.add_column(_('Invoiced Amount'), fieldname='invoiced')
-		self.add_column(_('Paid Amount'), fieldname='paid')
 		self.add_column(_(credit_debit_label), fieldname='credit_note')
+		self.add_column(_('Paid Amount'), fieldname='paid')
 		self.add_column(_('Outstanding Amount'), fieldname='outstanding')
+		self.add_column(_('开票金额'), fieldname='billed_amt', fieldtype='Currency', options='currency')
+		self.add_column(_('未开票金额'), fieldname='not_billed_amt', fieldtype='Currency', options='currency')
 
 		self.setup_ageing_columns()
 
@@ -129,6 +140,13 @@ class AccountsReceivableSummary(ReceivablePayableReport):
 			options='Currency', width=80)
 
 	def setup_ageing_columns(self):
+		# 添加开票账龄
+		for i, label in enumerate(["0-{range1}（开票）".format(range1=self.filters["range1"]),
+			"{range1}-{range2}（开票）".format(range1=cint(self.filters["range1"])+ 1, range2=self.filters["range2"]),
+			"{range2}-{range3}（开票）".format(range2=cint(self.filters["range2"])+ 1, range3=self.filters["range3"]),
+			"{range3}-{range4}（开票）".format(range3=cint(self.filters["range3"])+ 1, range4=self.filters["range4"]),
+			"{range4}-{above}（开票）".format(range4=cint(self.filters["range4"])+ 1, above=_("Above"))]):
+				self.add_column(label=label, fieldname='range' + str(i+1+5))
 		for i, label in enumerate(["0-{range1}".format(range1=self.filters["range1"]),
 			"{range1}-{range2}".format(range1=cint(self.filters["range1"])+ 1, range2=self.filters["range2"]),
 			"{range2}-{range3}".format(range2=cint(self.filters["range2"])+ 1, range3=self.filters["range3"]),

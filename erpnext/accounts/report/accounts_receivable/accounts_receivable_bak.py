@@ -104,10 +104,7 @@ class ReceivablePayableReport(object):
 					invoiced = 0.0,
 					paid = 0.0,
 					credit_note = 0.0,
-					outstanding = 0.0,
-					billed_amt = 0.0,
-					not_billed_amt = 0.0,
-					per_billed = 0.0
+					outstanding = 0.0
 				)
 			self.get_invoices(gle)
 
@@ -214,7 +211,7 @@ class ReceivablePayableReport(object):
 			row.outstanding = flt(row.invoiced - row.paid - row.credit_note, self.currency_precision)
 			row.invoice_grand_total = row.invoiced
 
-			if self.filters.is_summary or abs(row.outstanding) > 1.0/10 ** self.currency_precision:
+			if abs(row.outstanding) > 1.0/10 ** self.currency_precision:
 				# non-zero oustanding, we must consider this row
 
 				if self.is_invoice(row) and self.filters.based_on_payment_terms:
@@ -241,12 +238,9 @@ class ReceivablePayableReport(object):
 				self.data.append(self.total_row_map.get('Total'))
 
 	def append_row(self, row):
-		# 计算付款凭证的未开票金额
-		if row.voucher_type == "Payment Entry":
-			row.not_billed_amt = row.paid
 		self.allocate_future_payments(row)
-		self.set_party_details(row)
 		self.set_invoice_details(row)
+		self.set_party_details(row)
 		self.set_ageing(row)
 
 		if self.filters.get('group_by_party'):
@@ -304,13 +298,11 @@ class ReceivablePayableReport(object):
 		self.invoice_details = frappe._dict()
 		if self.party_type == "Customer":
 			si_list = frappe.db.sql("""
-				select name, due_date, po_no, per_billed, total
+				select name, due_date, po_no
 				from `tabSales Invoice`
 				where posting_date <= %s
 			""",self.filters.report_date, as_dict=1)
 			for d in si_list:
-				d.billed_amt = d.per_billed/100 * d.total
-				d.not_billed_amt = d.total - d.billed_amt
 				self.invoice_details.setdefault(d.name, d)
 
 			# Get Sales Team
@@ -326,12 +318,10 @@ class ReceivablePayableReport(object):
 
 		if self.party_type == "Supplier":
 			for pi in frappe.db.sql("""
-				select name, due_date, bill_no, bill_date, per_billed, total
+				select name, due_date, bill_no, bill_date
 				from `tabPurchase Invoice`
 				where posting_date <= %s
 			""", self.filters.report_date, as_dict=1):
-				pi.billed_amt = pi.per_billed/100 * pi.total
-				d.not_billed_amt = d.total - d.billed_amt
 				self.invoice_details.setdefault(pi.name, pi)
 
 		# Invoices booked via Journal Entries
@@ -544,12 +534,10 @@ class ReceivablePayableReport(object):
 		# ageing buckets should not have amounts if due date is not reached
 		if getdate(entry_date) > getdate(self.filters.report_date):
 			row.range1 = row.range2 = row.range3 = row.range4 = row.range5 = 0.0
-			row.range6 = row.range7 = row.range8 = row.range9 = row.range10 = 0.0
 
 	def get_ageing_data(self, entry_date, row):
 		# [0-30, 30-60, 60-90, 90-120, 120-above]
 		row.range1 = row.range2 = row.range3 = row.range4 = row.range5 = 0.0
-		row.range6 = row.range7 = row.range8 = row.range9 = row.range10 = 0.0
 
 		if not (self.age_as_on and entry_date):
 			return
@@ -567,7 +555,6 @@ class ReceivablePayableReport(object):
 
 		if index is None: index = 4
 		row['range' + str(index+1)] = row.outstanding
-		row['range' + str(index+1+5)] = row.not_billed_amt
 
 	def get_gl_entries(self):
 		# get all the GL entries filtered by the given filters
@@ -756,12 +743,12 @@ class ReceivablePayableReport(object):
 			self.add_column(label=_('Invoice Grand Total'), fieldname='invoice_grand_total')
 
 		self.add_column(_('Invoiced Amount'), fieldname='invoiced')
+		self.add_column(_('Paid Amount'), fieldname='paid')
 		if self.party_type == "Customer":
 			self.add_column(_('Credit Note'), fieldname='credit_note')
 		else:
 			# note: fieldname is still `credit_note`
 			self.add_column(_('Debit Note'), fieldname='credit_note')
-		self.add_column(_('Paid Amount'), fieldname='paid')
 		self.add_column(_('Outstanding Amount'), fieldname='outstanding')
 
 		self.setup_ageing_columns()
@@ -790,7 +777,7 @@ class ReceivablePayableReport(object):
 			self.add_column(label=_('Supplier Group'), fieldname='supplier_group', fieldtype='Link',
 				options='Supplier Group')
 
-		self.add_column(label=_('Remarks'), fieldname='remarks', fieldtype='Text', width=400)
+		self.add_column(label=_('Remarks'), fieldname='remarks', fieldtype='Text', width=200)
 
 	def add_column(self, label, fieldname=None, fieldtype='Currency', options=None, width=120):
 		if not fieldname: fieldname = scrub(label)
