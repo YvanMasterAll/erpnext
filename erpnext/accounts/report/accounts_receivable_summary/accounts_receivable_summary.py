@@ -141,11 +141,11 @@ class AccountsReceivableSummary(ReceivablePayableReport):
 
 	def setup_ageing_columns(self):
 		# 添加开票账龄
-		for i, label in enumerate(["0-{range1}（开票）".format(range1=self.filters["range1"]),
-			"{range1}-{range2}（开票）".format(range1=cint(self.filters["range1"])+ 1, range2=self.filters["range2"]),
-			"{range2}-{range3}（开票）".format(range2=cint(self.filters["range2"])+ 1, range3=self.filters["range3"]),
-			"{range3}-{range4}（开票）".format(range3=cint(self.filters["range3"])+ 1, range4=self.filters["range4"]),
-			"{range4}-{above}（开票）".format(range4=cint(self.filters["range4"])+ 1, above=_("Above"))]):
+		for i, label in enumerate(["0-{range1}（未开票）".format(range1=self.filters["range1"]),
+			"{range1}-{range2}（未开票）".format(range1=cint(self.filters["range1"])+ 1, range2=self.filters["range2"]),
+			"{range2}-{range3}（未开票）".format(range2=cint(self.filters["range2"])+ 1, range3=self.filters["range3"]),
+			"{range3}-{range4}（未开票）".format(range3=cint(self.filters["range3"])+ 1, range4=self.filters["range4"]),
+			"{range4}-{above}（未开票）".format(range4=cint(self.filters["range4"])+ 1, above=_("Above"))]):
 				self.add_column(label=label, fieldname='range' + str(i+1+5))
 		for i, label in enumerate(["0-{range1}".format(range1=self.filters["range1"]),
 			"{range1}-{range2}".format(range1=cint(self.filters["range1"])+ 1, range2=self.filters["range2"]),

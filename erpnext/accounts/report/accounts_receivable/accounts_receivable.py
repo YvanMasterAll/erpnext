@@ -310,7 +310,7 @@ class ReceivablePayableReport(object):
 			""",self.filters.report_date, as_dict=1)
 			for d in si_list:
 				d.billed_amt = d.per_billed/100 * d.total
-				d.not_billed_amt = d.total - d.billed_amt
+				d.not_billed_amt = -d.billed_amt
 				self.invoice_details.setdefault(d.name, d)
 
 			# Get Sales Team
@@ -331,7 +331,7 @@ class ReceivablePayableReport(object):
 				where posting_date <= %s
 			""", self.filters.report_date, as_dict=1):
 				pi.billed_amt = pi.per_billed/100 * pi.total
-				d.not_billed_amt = d.total - d.billed_amt
+				d.not_billed_amt = -d.billed_amt
 				self.invoice_details.setdefault(pi.name, pi)
 
 		# Invoices booked via Journal Entries
