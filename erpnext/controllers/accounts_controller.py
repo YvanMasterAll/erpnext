@@ -1059,8 +1059,9 @@ def get_advance_payment_entries(party_type, party, party_account, order_doctype,
 def update_invoice_status():
 	# Daily update the status of the invoices
 
-	frappe.db.sql(""" update `tabSales Invoice` set status = 'Overdue'
-		where due_date < CURDATE() and docstatus = 1 and outstanding_amount > 0""")
+	# Change: 发票当做出货单所以不计逾期状态
+	# frappe.db.sql(""" update `tabSales Invoice` set status = 'Overdue'
+	# 	where due_date < CURDATE() and docstatus = 1 and outstanding_amount > 0""")
 
 	frappe.db.sql(""" update `tabPurchase Invoice` set status = 'Overdue'
 		where due_date < CURDATE() and docstatus = 1 and outstanding_amount > 0""")
