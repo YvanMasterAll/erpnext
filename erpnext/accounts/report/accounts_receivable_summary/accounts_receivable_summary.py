@@ -38,8 +38,9 @@ class AccountsReceivableSummary(ReceivablePayableReport):
 			self.filters.report_date, self.filters.show_future_payments, self.filters.company) or {}
 
 		for party, party_dict in iteritems(self.party_total):
-			if party_dict.outstanding == 0:
-				continue
+			# Change: 显示已完成的交易
+			# if party_dict.outstanding == 0:
+			# 	continue
 
 			row = frappe._dict()
 
