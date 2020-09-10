@@ -67,8 +67,7 @@ class AccountsReceivableSummary(ReceivablePayableReport):
 
 			# Add all amount columns
 			for k in list(self.party_total[d.party]):
-				if k not in ["currency", "sales_person"]:
-
+				if k not in ["currency", "sales_person", "need_invoice"]:
 					self.party_total[d.party][k] += d.get(k, 0.0)
 
 			# set territory, customer_group, sales person etc
@@ -92,7 +91,8 @@ class AccountsReceivableSummary(ReceivablePayableReport):
 			"range8": 0.0,
 			"range9": 0.0,
 			"range10": 0.0,
-			"sales_person": []
+			"sales_person": [],
+			"need_invoice": ""
 		}))
 
 	def set_party_details(self, row):
@@ -101,6 +101,9 @@ class AccountsReceivableSummary(ReceivablePayableReport):
 		for key in ('territory', 'customer_group', 'supplier_group'):
 			if row.get(key):
 				self.party_total[row.party][key] = row.get(key)
+
+		if row.need_invoice:
+			self.party_total[row.party].need_invoice = row.need_invoice
 
 		if row.sales_person:
 			self.party_total[row.party].sales_person.append(row.sales_person)
@@ -113,6 +116,9 @@ class AccountsReceivableSummary(ReceivablePayableReport):
 		if self.party_naming_by == "Naming Series":
 			self.add_column(_('{0} Name').format(self.party_type),
 				fieldname = 'party_name', fieldtype='Data')
+		
+		if self.party_type == "Customer":
+			self.add_column("需要开票", fieldname="need_invoice", fieldtype='Data')
 
 		credit_debit_label = "Credit Note" if self.party_type == 'Customer' else "Debit Note"
 

@@ -242,8 +242,8 @@ class ReceivablePayableReport(object):
 
 	def append_row(self, row):
 		# 计算付款凭证的未开票金额
-		if row.voucher_type == "Payment Entry":
-			row.not_billed_amt = row.paid
+		# if row.voucher_type == "Payment Entry":
+		# 	row.not_billed_amt = row.paid
 		self.allocate_future_payments(row)
 		self.set_party_details(row)
 		self.set_invoice_details(row)
@@ -310,7 +310,7 @@ class ReceivablePayableReport(object):
 			""",self.filters.report_date, as_dict=1)
 			for d in si_list:
 				d.billed_amt = d.per_billed/100 * d.total
-				d.not_billed_amt = -d.billed_amt
+				d.not_billed_amt = d.total - d.billed_amt
 				self.invoice_details.setdefault(d.name, d)
 
 			# Get Sales Team
@@ -331,7 +331,7 @@ class ReceivablePayableReport(object):
 				where posting_date <= %s
 			""", self.filters.report_date, as_dict=1):
 				pi.billed_amt = pi.per_billed/100 * pi.total
-				d.not_billed_amt = -d.billed_amt
+				pi.not_billed_amt = pi.total - pi.billed_amt
 				self.invoice_details.setdefault(pi.name, pi)
 
 		# Invoices booked via Journal Entries
@@ -720,7 +720,7 @@ class ReceivablePayableReport(object):
 		if not party in self.party_details:
 			if self.party_type == 'Customer':
 				self.party_details[party] = frappe.db.get_value('Customer', party, ['customer_name',
-					'territory', 'customer_group', 'customer_primary_contact'], as_dict=True)
+					'territory', 'customer_group', 'customer_primary_contact', 'need_invoice'], as_dict=True)
 			else:
 				self.party_details[party] = frappe.db.get_value('Supplier', party, ['supplier_name',
 					'supplier_group'], as_dict=True)

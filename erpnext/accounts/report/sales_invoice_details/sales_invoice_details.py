@@ -34,6 +34,7 @@ def execute(filters=None):
 	args = {
 		"party_type": "Customer",
 		"naming_by": ["Selling Settings", "cust_master_name"],
+		"show_sales_person": 1
 	}
 	return SalesInvoiceDetailsReport(filters).run(args)
 
@@ -277,7 +278,7 @@ class SalesInvoiceDetailsReport(object):
 		if self.filters.from_date and self.filters.from_date > str(row.posting_date):
 			append_flag = False
 		for i, invoice_details in enumerate(invoice_details_list):
-			if i == 0:
+			if i == 0 or self.filters.get("item_code"):
 				son_row = copy.copy(row)
 				self.doing_append_row(son_row, invoice_details, append_flag)
 			else:
@@ -289,6 +290,13 @@ class SalesInvoiceDetailsReport(object):
 		self.allocate_future_payments(row)
 		self.set_invoice_details(row, invoice_details)
 		self.set_party_details(row)
+		self.set_sales_team_for_payment(row)
+
+		# 如果存在经办人和物料，添加过滤
+		if self.filters.get("sales_person") and self.filters.get("sales_person") != row.sales_person:
+			append_flag = False
+		if self.filters.get("item_code") and self.filters.get("item_code") != row.item_code:
+			append_flag = False
 
 		if self.filters.get('group_by_party'):
 			self.update_sub_total_row(row, row.party)
@@ -328,18 +336,29 @@ class SalesInvoiceDetailsReport(object):
 		if append_flag:
 			self.data.append(row)
 
+	def set_sales_team_for_payment(self, row):
+		# 为付款凭证添加经手人，根据客户查找销售人员，这种方式是不可靠的，但目前先这么做
+		if self.party_type == "Customer" and row.voucher_type == "Payment Entry":
+			sales_team = frappe.db.sql("""
+				select parent, sales_person
+				from `tabSales Team`
+				where parenttype = 'Customer' and parent = %s
+			""", row.party, as_dict=1)
+			for d in sales_team:
+				row.sales_person = d.sales_person
+
 	def set_invoice_details(self, row, invoice_details):
 		if row.due_date:
 			invoice_details.pop("due_date", None)
 		row.update(invoice_details)
 
+		if self.filters.show_sales_person and row.sales_team:
+			row.sales_person = ", ".join(row.sales_team)
+			del row['sales_team']
+
 		if row.voucher_type == 'Sales Invoice':
 			if self.filters.show_delivery_notes:
 				self.set_delivery_notes(row)
-
-			if self.filters.show_sales_person and row.sales_team:
-				row.sales_person = ", ".join(row.sales_team)
-				del row['sales_team']
 
 	def set_delivery_notes(self, row):
 		delivery_notes = self.delivery_notes.get(row.voucher_no, [])
@@ -375,7 +394,7 @@ class SalesInvoiceDetailsReport(object):
 		if self.party_type == "Customer":
 			si_list = frappe.db.sql("""
 				select 
-					si.name, si.status, si.is_return, si.due_date, si.po_no, si_item.base_amount, si_item.amount, si_item.billed_amt, si_item.item_name, si_item.qty, si_item.rate
+					si.name, si.status, si.is_return, si.due_date, si.po_no, si_item.base_amount, si_item.amount, si_item.billed_amt, si_item.item_name, si_item.item_code, si_item.qty, si_item.rate
 				from 
 					`tabSales Invoice` si, `tabSales Invoice Item` si_item
 				where 
@@ -396,13 +415,13 @@ class SalesInvoiceDetailsReport(object):
 					where parenttype = 'Sales Invoice'
 				""", as_dict=1)
 				for d in sales_team:
-					self.invoice_details.setdefault(d.parent, {})\
-						.setdefault('sales_team', []).append(d.sales_person)
+					for m in self.invoice_details.get(d.parent, []):
+						m.setdefault('sales_team', []).append(d.sales_person)
 
 		if self.party_type == "Supplier":
 			for pi in frappe.db.sql("""
 				select 
-					pi.name, pi.status, pi.is_return, pi.due_date, pi.bill_date, pi.bill_no, pi_item.base_amount, pi_item.amount, pi_item.billed_amt, pi_item.item_name, pi_item.qty, pi_item.rate
+					pi.name, pi.status, pi.is_return, pi.due_date, pi.bill_date, pi.bill_no, pi_item.base_amount, pi_item.amount, pi_item.billed_amt, pi_item.item_name, pi_item.item_code, pi_item.qty, pi_item.rate
 				from 
 					`tabPurchase Invoice` pi, `tabPurchase Invoice Item` pi_item
 				where 
@@ -788,6 +807,7 @@ class SalesInvoiceDetailsReport(object):
 		# self.add_column(label='Due Date', fieldtype='Date')
 
 		self.add_column(label=_('Item Name'), fieldname='item_name', fieldtype='Data')
+		self.add_column(label=_('Item Code'), fieldname='item_code', fieldtype='Data')
 		self.add_column(label=_('Rate'), fieldname='rate', fieldtype='Currency', options='currency')
 		self.add_column(label=_('Quantity'), fieldname='qty', fieldtype='Float', width=80)
 		self.add_column(label=_('Amount'), fieldname='amount', fieldtype='Currency', options='currency')
