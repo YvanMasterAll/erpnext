@@ -78,8 +78,6 @@ class SalesInvoiceDetailsReport(object):
 	def get_data(self):
 		self.get_gl_entries()
 		self.get_sales_invoices_or_customers_based_on_sales_person()
-		self.voucher_balance = OrderedDict()
-		self.init_voucher_balance() # invoiced, paid, credit_note, outstanding
 
 		# Build delivery note map against all sales invoices
 		self.build_delivery_note_map()
@@ -92,6 +90,9 @@ class SalesInvoiceDetailsReport(object):
 
 		# Get return entries
 		self.get_return_entries()
+
+		self.voucher_balance = OrderedDict()
+		self.init_voucher_balance() # invoiced, paid, credit_note, outstanding
 
 		self.data = []
 		for gle in self.gl_entries:
@@ -394,7 +395,7 @@ class SalesInvoiceDetailsReport(object):
 		if self.party_type == "Customer":
 			si_list = frappe.db.sql("""
 				select 
-					si.name, si.status, si.is_return, si.due_date, si.po_no, si_item.base_amount, si_item.amount, si_item.billed_amt, si_item.item_name, si_item.item_code, si_item.qty, si_item.rate
+					si.name, si.remarks, si.customer_name as party, si.posting_date, si.status, si.is_return, si.due_date, si.po_no, si_item.base_amount, si_item.amount, si_item.billed_amt, si_item.item_name, si_item.item_code, si_item.qty, si_item.rate
 				from 
 					`tabSales Invoice` si, `tabSales Invoice Item` si_item
 				where 
@@ -421,7 +422,7 @@ class SalesInvoiceDetailsReport(object):
 		if self.party_type == "Supplier":
 			for pi in frappe.db.sql("""
 				select 
-					pi.name, pi.status, pi.is_return, pi.due_date, pi.bill_date, pi.bill_no, pi_item.base_amount, pi_item.amount, pi_item.billed_amt, pi_item.item_name, pi_item.item_code, pi_item.qty, pi_item.rate
+					pi.name, pi.remarks, pi.supplier_name as party, pi.posting_date, pi.status, pi.is_return, pi.due_date, pi.bill_date, pi.bill_no, pi_item.base_amount, pi_item.amount, pi_item.billed_amt, pi_item.item_name, pi_item.item_code, pi_item.qty, pi_item.rate
 				from 
 					`tabPurchase Invoice` pi, `tabPurchase Invoice Item` pi_item
 				where 
@@ -629,6 +630,26 @@ class SalesInvoiceDetailsReport(object):
 		self.return_entries = frappe._dict(
 			frappe.get_all(doctype, filters, ['name', 'return_against'], as_list=1)
 		)
+		# 将退款记录添加到总账当中
+		for voucher_no in self.return_entries:
+			return_against = self.return_entries.get(voucher_no)
+			invoice_detail = self.invoice_details.get(voucher_no, [])[0]
+			if invoice_detail:
+				self.gl_entries.append(frappe._dict(
+					voucher_type = "Sales Invoice",
+					voucher_no = voucher_no,
+					posting_date = invoice_detail.posting_date,
+					party = invoice_detail.party,
+					invoiced = 0.0,
+					paid = 0.0,
+					credit_note = 0.0,
+					outstanding = 0.0,
+					debit = 0.0,
+					credit = 0.0,
+					remarks = invoice_detail.remarks
+				))
+				# 重新排序
+				self.gl_entries.sort(key=lambda elem:elem['posting_date'])
 
 	def get_gl_entries(self):
 		# get all the GL entries filtered by the given filters
