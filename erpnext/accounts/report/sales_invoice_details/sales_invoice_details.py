@@ -634,7 +634,8 @@ class SalesInvoiceDetailsReport(object):
 		for voucher_no in self.return_entries:
 			return_against = self.return_entries.get(voucher_no)
 			invoice_detail = self.invoice_details.get(voucher_no, [])[0]
-			if invoice_detail:
+			xx = invoice_detail['rate']
+			if invoice_detail and invoice_detail['rate'] == 0:
 				self.gl_entries.append(frappe._dict(
 					voucher_type = "Sales Invoice",
 					voucher_no = voucher_no,
