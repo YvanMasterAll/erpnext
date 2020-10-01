@@ -621,7 +621,7 @@ class SalesInvoiceDetailsReport(object):
 	def get_return_entries(self):
 		doctype = "Sales Invoice" if self.party_type == "Customer" else "Purchase Invoice"
 		filters={
-			'is_return': 1,
+			'total': 0,
 			'docstatus': 1
 		}
 		party_field = scrub(self.filters.party_type)
@@ -630,27 +630,25 @@ class SalesInvoiceDetailsReport(object):
 		self.return_entries = frappe._dict(
 			frappe.get_all(doctype, filters, ['name', 'return_against'], as_list=1)
 		)
-		# 将退款记录添加到总账当中
+		# 将发票金额为零的交易添加到总账当中，包括退款和发货
 		for voucher_no in self.return_entries:
-			return_against = self.return_entries.get(voucher_no)
+			# return_against = self.return_entries.get(voucher_no)
 			invoice_detail = self.invoice_details.get(voucher_no, [])[0]
-			xx = invoice_detail['rate']
-			if invoice_detail and invoice_detail['rate'] == 0:
-				self.gl_entries.append(frappe._dict(
-					voucher_type = "Sales Invoice",
-					voucher_no = voucher_no,
-					posting_date = invoice_detail.posting_date,
-					party = invoice_detail.party,
-					invoiced = 0.0,
-					paid = 0.0,
-					credit_note = 0.0,
-					outstanding = 0.0,
-					debit = 0.0,
-					credit = 0.0,
-					remarks = invoice_detail.remarks
-				))
-				# 重新排序
-				self.gl_entries.sort(key=lambda elem:elem['posting_date'])
+			self.gl_entries.append(frappe._dict(
+				voucher_type = "Sales Invoice",
+				voucher_no = voucher_no,
+				posting_date = invoice_detail.posting_date,
+				party = invoice_detail.party,
+				invoiced = 0.0,
+				paid = 0.0,
+				credit_note = 0.0,
+				outstanding = 0.0,
+				debit = 0.0,
+				credit = 0.0,
+				remarks = invoice_detail.remarks
+			))
+		# 重新排序
+		self.gl_entries.sort(key=lambda elem:elem['posting_date'])
 
 	def get_gl_entries(self):
 		# get all the GL entries filtered by the given filters

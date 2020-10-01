@@ -597,6 +597,7 @@ class ReceivablePayableReport(object):
 			where
 				docstatus < 2
 				and party_type=%s
+				and is_cancelled != 1
 				and (party is not null and party != '')
 				{1} {2} {3}"""
 			.format(select_fields, date_condition, conditions, order_by), values, as_dict=True)
